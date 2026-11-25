@@ -1,0 +1,2 @@
+const {contextBridge,ipcRenderer}=require("electron");
+contextBridge.exposeInMainWorld("aster",{readData:()=>ipcRenderer.invoke("data:read"),writeData:d=>ipcRenderer.invoke("data:write",d),saveKey:v=>ipcRenderer.invoke("key:save",v),readKey:()=>ipcRenderer.invoke("key:read"),addApp:()=>ipcRenderer.invoke("app:add"),launchApp:p=>ipcRenderer.invoke("app:launch",p)});
