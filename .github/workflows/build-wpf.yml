@@ -1,0 +1,39 @@
+name: Build ASTER WPF
+
+on:
+  push:
+    branches:
+      - feature/wpf-foundation-0.1
+    paths:
+      - 'windows-wpf/**'
+      - '.github/workflows/build-wpf.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore windows-wpf/ASTER.Workstation.sln
+
+      - name: Publish Windows x64 application
+        run: dotnet publish windows-wpf/src/ASTER.Workstation.App/ASTER.Workstation.App.csproj --configuration Release --runtime win-x64 --self-contained true --output windows-wpf/artifacts/publish
+
+      - name: Upload Windows application
+        uses: actions/upload-artifact@v4
+        with:
+          name: ASTER-AI-Workstation-0.1-win-x64
+          path: windows-wpf/artifacts/publish/
+          if-no-files-found: error
+          retention-days: 14
