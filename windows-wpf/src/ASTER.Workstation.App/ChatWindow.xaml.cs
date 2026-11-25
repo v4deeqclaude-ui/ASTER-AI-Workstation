@@ -1,5 +1,5 @@
 using System.Collections.ObjectModel;
-using System.Net.Http;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -36,8 +36,7 @@ public partial class ChatWindow : Window
         await using var command = connection.CreateCommand();
         command.CommandText = "SELECT Role, Content FROM AiMessages ORDER BY Id;";
         await using var reader = await command.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
-            AddMessage(reader.GetString(0), reader.GetString(1));
+        while (await reader.ReadAsync()) AddMessage(reader.GetString(0), reader.GetString(1));
         ScrollToEnd();
     }
 
@@ -57,12 +56,24 @@ public partial class ChatWindow : Window
         var text = MessageInput.Text.Trim();
         if (_sending || string.IsNullOrWhiteSpace(text)) return;
 
+        JsonElement session;
+        try { session = await ChatGPTBridgeService.Shared.GetSessionAsync(); }
+        catch { session = default; }
+        var chatGPTConnected = session.ValueKind == JsonValueKind.Object &&
+            session.TryGetProperty("status", out var status) && status.GetString() == "connected";
+        var sharing = chatGPTConnected && session.TryGetProperty("sharing", out var share) && share.GetBoolean();
         var apiKey = WindowsCredentialStore.ReadApiKey();
-        if (string.IsNullOrWhiteSpace(apiKey))
+
+        if (chatGPTConnected && !sharing)
         {
-            StatusText.Text = "Сначала добавь API-ключ в разделе «Настройки».";
-            MessageBox.Show(this, "Для работы AI-чата нужен API-ключ OpenAI. Открой «Настройки» в главном окне и сохрани ключ.",
-                "ASTER — требуется API-ключ", MessageBoxButton.OK, MessageBoxImage.Information);
+            StatusText.Text = "ChatGPT подключён, но plan sharing не разрешён. Проверь разрешения аккаунта в ChatGPT.";
+            return;
+        }
+        if (!sharing && string.IsNullOrWhiteSpace(apiKey))
+        {
+            StatusText.Text = "Подключи ChatGPT в настройках или отдельно добавь OpenAI API-ключ.";
+            MessageBox.Show(this, "Для AI-чата нужно подключить ChatGPT через браузер или сохранить отдельный OpenAI API-ключ в настройках.",
+                "ASTER — требуется подключение", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -72,15 +83,27 @@ public partial class ChatWindow : Window
         MessageInput.Clear();
         AddMessage("user", text);
         await SaveMessageAsync("user", text);
-        StatusText.Text = "ASTER отправляет запрос…";
+        StatusText.Text = sharing ? "ASTER использует подключение ChatGPT…" : "ASTER отправляет запрос через OpenAI API…";
 
         try
         {
             var history = await ReadRecentMessagesAsync(24);
-            var answer = await OpenAiResponsesClient.SendAsync(apiKey, "gpt-4.1-mini", history);
+            string answer;
+            if (sharing)
+            {
+                var modelsElement = await ChatGPTBridgeService.Shared.RequestModelsAsync();
+                var model = modelsElement.EnumerateArray().Select(x => x.TryGetProperty("slug", out var slug) ? slug.GetString() : null)
+                    .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+                if (string.IsNullOrWhiteSpace(model)) throw new InvalidOperationException("ChatGPT не вернул доступные модели.");
+                answer = await ChatGPTBridgeService.Shared.SendAsync(model, history);
+            }
+            else
+            {
+                answer = await OpenAiResponsesClient.SendAsync(apiKey!, "gpt-4.1-mini", history);
+            }
             AddMessage("assistant", answer);
             await SaveMessageAsync("assistant", answer);
-            StatusText.Text = "Ответ получен. История сохранена локально.";
+            StatusText.Text = sharing ? "Ответ получен через ChatGPT. История сохранена локально." : "Ответ получен через OpenAI API. История сохранена локально.";
         }
         catch (Exception ex)
         {
@@ -131,6 +154,7 @@ public partial class ChatWindow : Window
             Content = content,
             BubbleBrush = isUser ? "#29313D" : "#202A27"
         });
+        ScrollToEnd();
     }
 
     private void ScrollToEnd()

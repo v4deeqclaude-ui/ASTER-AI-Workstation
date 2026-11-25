@@ -18,7 +18,7 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout ASTER
         uses: actions/checkout@v4
 
       - name: Setup .NET 10
@@ -26,11 +26,56 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Restore dependencies
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.12.0'
+
+      - name: Checkout pinned OpenAI Sign in with ChatGPT DevKit
+        shell: pwsh
+        run: |
+          git clone https://github.com/openai/sign-in-with-chatgpt-devkit.git devkit
+          git -C devkit checkout 0a36fefeb913055c8c7a1a29b63d82b96b2e841a
+          npm ci --prefix devkit
+          npm run build -w @siwc/local --prefix devkit
+
+      - name: Stage official SDK and notices
+        shell: pwsh
+        run: |
+          $vendor = "windows-wpf/aster-chatgpt-bridge/vendor/siwc-local"
+          New-Item -ItemType Directory -Force $vendor | Out-Null
+          Copy-Item "devkit/packages/local/package.json" "$vendor/package.json"
+          Copy-Item "devkit/packages/local/LICENSE" "$vendor/LICENSE"
+          Copy-Item "devkit/packages/local/dist" "$vendor/dist" -Recurse
+          Copy-Item "devkit/THIRD_PARTY_NOTICES.md" "windows-wpf/aster-chatgpt-bridge/THIRD_PARTY_NOTICES.md"
+          Copy-Item "devkit/LICENSE" "windows-wpf/aster-chatgpt-bridge/OPENAI-DEVKIT-LICENSE"
+          npm install --prefix windows-wpf/aster-chatgpt-bridge --omit=dev --no-audit --no-fund
+
+      - name: Test helper protocol and Windows DPAPI
+        shell: pwsh
+        run: |
+          $result = node windows-wpf/aster-chatgpt-bridge/bridge.mjs --self-test | ConvertFrom-Json
+          if (-not $result.ok -or -not $result.browserAllowlist) { throw "ChatGPT bridge self-test failed." }
+          Write-Host "ChatGPT bridge self-test passed."
+
+      - name: Restore WPF dependencies
         run: dotnet restore windows-wpf/ASTER.Workstation.sln
 
       - name: Publish Windows x64 application
         run: dotnet publish windows-wpf/src/ASTER.Workstation.App/ASTER.Workstation.App.csproj --configuration Release --runtime win-x64 --self-contained true --output windows-wpf/artifacts/publish
+
+      - name: Package ChatGPT bridge and Node runtime
+        shell: pwsh
+        run: |
+          $destination = "windows-wpf/artifacts/publish/ChatGPTBridge"
+          New-Item -ItemType Directory -Force $destination | Out-Null
+          Copy-Item "windows-wpf/aster-chatgpt-bridge/bridge.mjs" "$destination/bridge.mjs"
+          Copy-Item "windows-wpf/aster-chatgpt-bridge/node_modules" "$destination/node_modules" -Recurse
+          $nodeExe = (Get-Command node).Source
+          Copy-Item $nodeExe "$destination/node.exe"
+          Copy-Item "windows-wpf/aster-chatgpt-bridge/OPENAI-DEVKIT-LICENSE" "$destination/OPENAI-DEVKIT-LICENSE"
+          Copy-Item "windows-wpf/aster-chatgpt-bridge/THIRD_PARTY_NOTICES.md" "$destination/THIRD_PARTY_NOTICES.md"
+          if (-not (Test-Path "$destination/node.exe")) { throw "Bundled Node.js runtime is missing." }
 
       - name: Upload Windows application
         uses: actions/upload-artifact@v4
