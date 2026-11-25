@@ -229,13 +229,20 @@ public partial class MainWindow : Window
             "ASTER — история", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
+    private void Chat_Click(object sender, RoutedEventArgs e)
+    {
+        PageTitle.Text = "AI-ассистент";
+        PageSubtitle.Text = "Диалог с ИИ и локальная история сообщений.";
+        var window = new ChatWindow(_database) { Owner = this };
+        window.ShowDialog();
+    }
+
     private void Settings_Click(object sender, RoutedEventArgs e)
     {
         PageTitle.Text = "Настройки";
-        PageSubtitle.Text = "Локальное хранилище ASTER и резервные копии.";
-        MessageBox.Show(this,
-            $"Локальные данные ASTER хранятся здесь:\n{AppPaths.Root}\n\nРезервные копии:\n{AppPaths.BackupDirectory}\n\nAPI-ключ пока не требуется.",
-            "ASTER — настройки", MessageBoxButton.OK, MessageBoxImage.Information);
+        PageSubtitle.Text = "Параметры подключения AI-провайдера."; 
+        var window = new SettingsWindow { Owner = this };
+        window.ShowDialog();
     }
 
     private void ClearProjectView()

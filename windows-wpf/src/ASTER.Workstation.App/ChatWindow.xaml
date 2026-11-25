@@ -1,0 +1,49 @@
+<Window x:Class="ASTER.Workstation.App.ChatWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="ASTER — AI-ассистент" Height="700" Width="900"
+        MinHeight="520" MinWidth="680" WindowStartupLocation="CenterOwner"
+        Background="{StaticResource WindowBrush}" Foreground="{StaticResource TextBrush}">
+    <Grid Margin="22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="AI-АССИСТЕНТ ASTER" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
+            <TextBlock Text="Рабочий диалог" FontSize="23" FontWeight="SemiBold" Margin="0,4,0,0"/>
+            <TextBlock Text="OpenAI · Responses API · история хранится локально" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0"/>
+        </StackPanel>
+        <Border Grid.Row="1" Background="{StaticResource PanelBrush}" BorderBrush="#2A323D" BorderThickness="1" CornerRadius="10" Padding="12">
+            <ListBox x:Name="MessagesList" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <Border Background="{Binding BubbleBrush}" CornerRadius="8" Padding="12" Margin="0,4">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Author}" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding Content}" TextWrapping="Wrap" FontSize="13" Margin="0,5,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+        <TextBlock x:Name="StatusText" Grid.Row="2" Text="Готов к работе." FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="2,10,2,8"/>
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="MessageInput" Grid.Column="0" MinHeight="52" MaxHeight="120" AcceptsReturn="True"
+                     TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Padding="12"
+                     Background="#202630" Foreground="{StaticResource TextBrush}" BorderBrush="#394453"
+                     FontSize="13" VerticalContentAlignment="Center"
+                     KeyDown="MessageInput_KeyDown"/>
+            <Button x:Name="SendButton" Grid.Column="1" Content="Отправить" Margin="10,0,0,0"
+                    Padding="18,10" Background="{StaticResource AccentBrush}" Foreground="#17191D"
+                    BorderBrush="{StaticResource AccentBrush}" FontWeight="SemiBold" Click="Send_Click"/>
+        </Grid>
+    </Grid>
+</Window>

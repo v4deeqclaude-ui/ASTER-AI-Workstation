@@ -35,6 +35,12 @@ public sealed class SqliteDatabase
                 [Key] TEXT NOT NULL PRIMARY KEY,
                 [Value] TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS AiMessages (
+                Id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Role TEXT NOT NULL,
+                Content TEXT NOT NULL,
+                CreatedUtc TEXT NOT NULL
+            );
             """;
         await command.ExecuteNonQueryAsync(cancellationToken);
     }
