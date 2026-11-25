@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>ASTER.Workstation</AssemblyName>
+    <RootNamespace>ASTER.Workstation.App</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ASTER.Workstation.Core\ASTER.Workstation.Core.csproj" />
+    <ProjectReference Include="..\ASTER.Workstation.Data\ASTER.Workstation.Data.csproj" />
+    <ProjectReference Include="..\ASTER.Workstation.Projects\ASTER.Workstation.Projects.csproj" />
+  </ItemGroup>
+</Project>
