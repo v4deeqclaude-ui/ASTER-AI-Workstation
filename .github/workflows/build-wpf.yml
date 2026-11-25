@@ -5,6 +5,7 @@ on:
     branches:
       - feature/wpf-foundation-0.1
       - feature/aster-ai-chat-0.2
+      - feature/aster-chatgpt-plan-auth
     paths:
       - 'windows-wpf/**'
       - '.github/workflows/build-wpf.yml'
@@ -34,7 +35,7 @@ jobs:
       - name: Upload Windows application
         uses: actions/upload-artifact@v4
         with:
-          name: ASTER-AI-Workstation-0.2-win-x64
+          name: ASTER-AI-Workstation-0.2-chatgpt-auth-win-x64
           path: windows-wpf/artifacts/publish/
           if-no-files-found: error
           retention-days: 14
