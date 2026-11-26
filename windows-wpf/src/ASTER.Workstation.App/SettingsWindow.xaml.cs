@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.IO;
 using System.Windows;
 
 namespace ASTER.Workstation.App;
@@ -8,6 +9,8 @@ public partial class SettingsWindow : Window
     public SettingsWindow()
     {
         InitializeComponent();
+        var proxyPath = Path.Combine(AppPaths.Root, "chatgpt-proxy.txt");
+        ProxyBox.Text = File.Exists(proxyPath) ? File.ReadAllText(proxyPath).Trim() : "http://127.0.0.1:10809";
         ChatGPTBridgeService.Shared.DiagnosticReceived += OnDiagnosticReceived;
         AddConsoleLine("Консоль готова. Здесь будут отображаться события подключения ChatGPT.");
         KeyStatusText.Text = string.IsNullOrWhiteSpace(WindowsCredentialStore.ReadApiKey())
@@ -106,6 +109,29 @@ public partial class SettingsWindow : Window
         }
         catch (Exception ex) { StatusText.Text = ex.Message; }
         finally { await RefreshChatGPTStatusAsync(); }
+    }
+
+    private void SaveProxy_Click(object sender, RoutedEventArgs e)
+    {
+        var value = ProxyBox.Text.Trim();
+        if (!string.Equals(value, "direct", StringComparison.OrdinalIgnoreCase) &&
+            (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttp || string.IsNullOrWhiteSpace(uri.Host) || uri.Port < 1))
+        {
+            StatusText.Text = "Укажи корректный HTTP-прокси или слово direct.";
+            return;
+        }
+        try
+        {
+            Directory.CreateDirectory(AppPaths.Root);
+            File.WriteAllText(Path.Combine(AppPaths.Root, "chatgpt-proxy.txt"), value);
+            StatusText.Text = "Настройка прокси сохранена. Полностью закрой и заново запусти ASTER, чтобы применить её.";
+            AddConsoleLine("Настройка прокси сохранена; для применения нужен перезапуск ASTER.");
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Не удалось сохранить прокси: " + ex.Message;
+            AddConsoleLine("Ошибка сохранения настройки прокси: " + ex.Message);
+        }
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
