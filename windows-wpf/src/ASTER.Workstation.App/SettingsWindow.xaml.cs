@@ -8,16 +8,42 @@ public partial class SettingsWindow : Window
     public SettingsWindow()
     {
         InitializeComponent();
+        ChatGPTBridgeService.Shared.DiagnosticReceived += OnDiagnosticReceived;
+        AddConsoleLine("Консоль готова. Здесь будут отображаться события подключения ChatGPT.");
         KeyStatusText.Text = string.IsNullOrWhiteSpace(WindowsCredentialStore.ReadApiKey())
             ? "Ключ не сохранён."
             : "API-ключ уже сохранён в Windows.";
         Loaded += async (_, _) => await RefreshChatGPTStatusAsync();
     }
 
+    private void OnDiagnosticReceived(string line)
+    {
+        Dispatcher.BeginInvoke(() => AddConsoleLine(line));
+    }
+
+    private void AddConsoleLine(string line)
+    {
+        DiagnosticConsole.AppendText(line + Environment.NewLine);
+        DiagnosticConsole.ScrollToEnd();
+    }
+
+    private void ClearConsole_Click(object sender, RoutedEventArgs e)
+    {
+        DiagnosticConsole.Clear();
+        AddConsoleLine("Журнал очищен.");
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        ChatGPTBridgeService.Shared.DiagnosticReceived -= OnDiagnosticReceived;
+        base.OnClosed(e);
+    }
+
     private async Task RefreshChatGPTStatusAsync()
     {
         try
         {
+            AddConsoleLine("Проверка текущей сессии ChatGPT…");
             var session = await ChatGPTBridgeService.Shared.GetSessionAsync();
             var status = session.TryGetProperty("status", out var s) ? s.GetString() : "disconnected";
             var sharing = session.TryGetProperty("sharing", out var sh) && sh.GetBoolean();
@@ -32,11 +58,13 @@ public partial class SettingsWindow : Window
                 _ => "ChatGPT не подключён."
             };
             DisconnectButton.IsEnabled = status == "connected" || status == "reauth_required";
+            AddConsoleLine("Статус сессии: " + (status ?? "unknown") + ".");
         }
         catch (Exception ex)
         {
             ChatGPTStatusText.Text = "Модуль ChatGPT пока недоступен.";
             StatusText.Text = ex.Message;
+            AddConsoleLine("Ошибка проверки сессии: " + ex.Message);
         }
     }
 
@@ -45,10 +73,12 @@ public partial class SettingsWindow : Window
         SignInButton.IsEnabled = false;
         ChatGPTStatusText.Text = "Открываем защищённую страницу входа…";
         StatusText.Text = "Войди в ChatGPT в браузере. Не отправляй никому пароль или коды.";
+        AddConsoleLine("Начат процесс входа в ChatGPT.");
         try
         {
             var session = await ChatGPTBridgeService.Shared.SignInAsync();
             var sharing = session.TryGetProperty("sharing", out var sh) && sh.GetBoolean();
+            AddConsoleLine("Авторизация завершена. Plan sharing: " + (sharing ? "доступен." : "не подтверждён."));
             ChatGPTStatusText.Text = sharing
                 ? "Вход выполнен. Разрешение на ChatGPT plan sharing подтверждено."
                 : "Вход выполнен, но ChatGPT plan sharing для этого аккаунта не разрешён.";
@@ -57,6 +87,7 @@ public partial class SettingsWindow : Window
         {
             ChatGPTStatusText.Text = "Не удалось завершить вход.";
             StatusText.Text = ex.Message;
+            AddConsoleLine("Ошибка авторизации: " + ex.Message);
         }
         finally
         {
