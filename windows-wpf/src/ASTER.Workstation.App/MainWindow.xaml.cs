@@ -237,6 +237,13 @@ public partial class MainWindow : Window
         window.ShowDialog();
     }
 
+    private void Terminal_Click(object sender, RoutedEventArgs e)
+    {
+        WorkspaceActivityLog.Write("ASTER", "Открыта командная строка рабочего пространства.");
+        var window = new TerminalWindow { Owner = this };
+        window.Show();
+    }
+
     private void Settings_Click(object sender, RoutedEventArgs e)
     {
         PageTitle.Text = "Настройки";
