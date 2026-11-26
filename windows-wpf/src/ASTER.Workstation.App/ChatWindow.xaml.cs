@@ -36,7 +36,8 @@ public partial class ChatWindow : UserControl
         await using var command = connection.CreateCommand();
         command.CommandText = "SELECT Role, Content FROM AiMessages ORDER BY Id;";
         await using var reader = await command.ExecuteReaderAsync();
-        var loadedCount = 0;\n        while (await reader.ReadAsync()) { AddMessage(reader.GetString(0), reader.GetString(1)); loadedCount++; }\n        WorkspaceActivityLog.Write("CHAT", $"Загружена история AI-чата: {loadedCount} сообщений.");
+        var loadedCount = 0;
+        while (await reader.ReadAsync()) { AddMessage(reader.GetString(0), reader.GetString(1)); loadedCount++; }\n        WorkspaceActivityLog.Write("CHAT", $"Загружена история AI-чата: {loadedCount} сообщений.");
         ScrollToEnd();
     }
 
@@ -81,7 +82,8 @@ public partial class ChatWindow : UserControl
         SendButton.IsEnabled = false;
         MessageInput.IsEnabled = false;
         MessageInput.Clear();
-        WorkspaceActivityLog.Write("CHAT", $"Отправлено сообщение ассистенту (символов: {text.Length}). Содержимое не записывается в системный журнал.");\n        AddMessage("user", text);
+        WorkspaceActivityLog.Write("CHAT", $"Отправлено сообщение ассистенту (символов: {text.Length}). Содержимое не записывается в системный журнал.");
+        AddMessage("user", text);
         await SaveMessageAsync("user", text);
         StatusText.Text = sharing ? "ASTER использует подключение ChatGPT…" : "ASTER отправляет запрос через OpenAI API…";
 
@@ -103,12 +105,14 @@ public partial class ChatWindow : UserControl
             }
             AddMessage("assistant", answer);
             await SaveMessageAsync("assistant", answer);
-            StatusText.Text = sharing ? "Ответ получен через ChatGPT. История сохранена локально." : "Ответ получен через OpenAI API. История сохранена локально.";\n            WorkspaceActivityLog.Write("CHAT", sharing ? "Получен ответ от ChatGPT; история сохранена." : "Получен ответ от OpenAI API; история сохранена.");
+            StatusText.Text = sharing ? "Ответ получен через ChatGPT. История сохранена локально." : "Ответ получен через OpenAI API. История сохранена локально.";
+            WorkspaceActivityLog.Write("CHAT", sharing ? "Получен ответ от ChatGPT; история сохранена." : "Получен ответ от OpenAI API; история сохранена.");
         }
         catch (Exception ex)
         {
             StatusText.Text = "Не удалось получить ответ.";
-            AddMessage("system", "Ошибка: " + ex.Message);\n            WorkspaceActivityLog.Write("ERROR", "Ошибка AI-запроса: " + ex.Message);
+            AddMessage("system", "Ошибка: " + ex.Message);
+            WorkspaceActivityLog.Write("ERROR", "Ошибка AI-запроса: " + ex.Message);
         }
         finally
         {
