@@ -17,6 +17,19 @@ public sealed class ChatGPTBridgeService
     private StreamWriter? _input;
     private readonly SemaphoreSlim _writeLock = new(1, 1);
 
+    public event Action<string>? DiagnosticReceived;
+
+    private void LogDiagnostic(string message)
+    {
+        var safe = message
+            .Replace("\\r", " ").Replace("\\n", " ")
+            .Replace("\\t", " ");
+        safe = System.Text.RegularExpressions.Regex.Replace(safe, @"https?://[^\\s""'<>]+", "[URL скрыт]", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        safe = System.Text.RegularExpressions.Regex.Replace(safe, @"(?i)(bearer\\s+|access[_ -]?token[=: ]+|refresh[_ -]?token[=: ]+|client[_ -]?secret[=: ]+)[^\\s,;]+", "$1[скрыто]");
+        if (safe.Length > 500) safe = safe[..500];
+        DiagnosticReceived?.Invoke($"[{DateTime.Now:HH:mm:ss}] {safe}");
+    }
+
     private ChatGPTBridgeService() { }
 
     private async Task EnsureStartedAsync()
@@ -51,6 +64,7 @@ public sealed class ChatGPTBridgeService
                         pending.TrySetException(new InvalidOperationException("Модуль ChatGPT завершил работу. Перезапусти подключение."));
             };
             if (!process.Start()) throw new InvalidOperationException("Не удалось запустить модуль ChatGPT.");
+            LogDiagnostic("Запущен локальный модуль авторизации ChatGPT.");
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
             _process = process;
@@ -68,7 +82,18 @@ public sealed class ChatGPTBridgeService
             if (root.TryGetProperty("type", out var type))
             {
                 if (type.GetString() == "browser.open" && root.TryGetProperty("url", out var url))
-                    OpenAuthorizationUrl(url.GetString());
+                {
+                    LogDiagnostic("Получен запрос на открытие страницы входа OpenAI.");
+                    try
+                    {
+                        OpenAuthorizationUrl(url.GetString());
+                        LogDiagnostic("Страница входа передана браузеру Windows.");
+                    }
+                    catch (Exception ex)
+                    {
+                        LogDiagnostic("Не удалось открыть браузер: " + ex.Message);
+                    }
+                }
                 return;
             }
             if (!root.TryGetProperty("requestId", out var idElement)) return;
@@ -102,8 +127,9 @@ public sealed class ChatGPTBridgeService
                     string.IsNullOrWhiteSpace(code) ? null : "Код: " + code,
                     string.IsNullOrWhiteSpace(diagnostic) ? null : diagnostic
                 }.Where(x => x is not null));
-                completion.TrySetException(new InvalidOperationException(
-                    (message ?? "Ошибка подключения ChatGPT.") + (detail.Length == 0 ? "" : Environment.NewLine + detail)));
+                var fullMessage = (message ?? "Ошибка подключения ChatGPT.") + (detail.Length == 0 ? "" : " · " + detail);
+                LogDiagnostic("Ошибка модуля: " + fullMessage);
+                completion.TrySetException(new InvalidOperationException(fullMessage));
             }
         }
         catch { /* Malformed helper output is ignored; no raw output is logged. */ }
@@ -122,6 +148,8 @@ public sealed class ChatGPTBridgeService
     private async Task<JsonElement> RequestAsync(object payload, CancellationToken cancellationToken = default)
     {
         await EnsureStartedAsync();
+        var commandName = payload.GetType().GetProperty("command")?.GetValue(payload)?.ToString() ?? "unknown";
+        LogDiagnostic("Отправлена команда: " + commandName);
         var requestId = Guid.NewGuid().ToString("N");
         var envelope = JsonSerializer.SerializeToElement(payload);
         var json = new Dictionary<string, object?> { ["requestId"] = requestId };
