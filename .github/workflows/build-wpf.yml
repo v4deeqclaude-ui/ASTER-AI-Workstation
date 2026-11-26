@@ -6,6 +6,7 @@ on:
       - feature/wpf-foundation-0.1
       - feature/aster-ai-chat-0.2
       - feature/aster-chatgpt-plan-auth
+      - fix/aster-oauth-diagnostics-2026-11
     paths:
       - 'windows-wpf/**'
       - '.github/workflows/build-wpf.yml'
