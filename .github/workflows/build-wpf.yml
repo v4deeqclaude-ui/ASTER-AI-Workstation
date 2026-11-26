@@ -36,6 +36,21 @@ jobs:
         run: |
           git clone https://github.com/openai/sign-in-with-chatgpt-devkit.git devkit
           git -C devkit checkout 0a36fefeb913055c8c7a1a29b63d82b96b2e841a
+
+          # Preserve a safe reference to unexpected low-level errors. The SDK normally
+          # normalizes them to connection_error; ASTER displays only cause type/code.
+          $errorsPath = "devkit/packages/local/src/errors.ts"
+          $errorsSource = Get-Content $errorsPath -Raw
+          $oldErrorLine = '  return new ChatGPTError("connection_error", "The connection could not be completed. Try again.", true);'
+          $newErrorLine = @'
+            const wrapped = new ChatGPTError("connection_error", "The connection could not be completed. Try again.", true);
+            Object.defineProperty(wrapped, "cause", { value: error, enumerable: false });
+            return wrapped;
+          '@
+          if (-not $errorsSource.Contains($oldErrorLine)) { throw "Could not apply safe SDK error-diagnostics patch." }
+          $errorsSource = $errorsSource.Replace($oldErrorLine, $newErrorLine.Trim())
+          Set-Content -Path $errorsPath -Value $errorsSource -NoNewline
+
           npm ci --prefix devkit
           npm run build -w @siwc/local --prefix devkit
 
