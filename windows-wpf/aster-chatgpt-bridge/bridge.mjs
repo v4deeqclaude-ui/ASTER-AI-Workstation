@@ -77,7 +77,10 @@ function ensureClient() {
       emit({ type: "browser.open", url });
     }
   });
-  client.subscribe((state) => emit({ type: "session", state }));
+  client.subscribe((state) => {
+    emit({ type: "session", state });
+    emit({ type: "diagnostic", message: `Состояние SDK: ${state.status}; доступ к плану: ${state.sharing ? "да" : "нет"}.` });
+  });
   return client;
 }
 
@@ -91,7 +94,16 @@ async function handle(message) {
     case "signin.start":
       if (signInBusy) throw Object.assign(new Error("Вход уже выполняется."), { code: "connection_busy" });
       signInBusy = true;
-      try { return await api.signIn(); } finally { signInBusy = false; }
+      try {
+        emit({ type: "diagnostic", message: "Ожидание локального возврата авторизации от браузера." });
+        const result = await api.signIn();
+        emit({ type: "diagnostic", message: "SDK завершил OAuth, проверку личности и сохранение сессии." });
+        return result;
+      } catch (error) {
+        const details = safeError(error);
+        emit({ type: "diagnostic", message: `Процесс входа завершился ошибкой: ${details.code}.` });
+        throw error;
+      } finally { signInBusy = false; }
     case "signin.cancel":
       api.cancelSignIn();
       return { cancelled: true };
