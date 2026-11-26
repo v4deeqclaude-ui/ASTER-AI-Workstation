@@ -90,10 +90,12 @@ public sealed class ChatGPTBridgeService
                     var errorType = details.TryGetProperty("errorType", out var et) ? et.GetString() : null;
                     var causeType = details.TryGetProperty("causeType", out var ct) ? ct.GetString() : null;
                     var causeCode = details.TryGetProperty("causeCode", out var cc) ? cc.GetString() : null;
+                    var causeMessage = details.TryGetProperty("causeMessage", out var cm) ? cm.GetString() : null;
                     diagnostic = string.Join(" · ", new[] {
                         string.IsNullOrWhiteSpace(errorType) ? null : "тип: " + errorType,
                         string.IsNullOrWhiteSpace(causeType) ? null : "причина: " + causeType,
-                        string.IsNullOrWhiteSpace(causeCode) ? null : "код: " + causeCode
+                        string.IsNullOrWhiteSpace(causeCode) ? null : "код: " + causeCode,
+                        string.IsNullOrWhiteSpace(causeMessage) ? null : "детали: " + causeMessage
                     }.Where(x => x is not null));
                 }
                 var detail = string.Join(" · ", new[] {
