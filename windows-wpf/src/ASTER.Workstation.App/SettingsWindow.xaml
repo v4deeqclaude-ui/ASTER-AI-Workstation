@@ -20,6 +20,12 @@
             <StackPanel>
                 <TextBlock Text="ВХОД ЧЕРЕЗ CHATGPT" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
                 <TextBlock Text="Авторизация в браузере. ASTER не просит пароль и хранит сессию с защитой Windows DPAPI." TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,10"/>
+                <TextBlock Text="ПРОКСИ ДЛЯ ПОДКЛЮЧЕНИЯ" FontSize="9" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" Margin="0,2,0,4"/>
+                <DockPanel Margin="0,0,0,8">
+                    <Button Content="Сохранить" Click="SaveProxy_Click" DockPanel.Dock="Right" Margin="8,0,0,0" Padding="9,5"/>
+                    <TextBox x:Name="ProxyBox" Height="30" Padding="7" Background="#202630" Foreground="{StaticResource TextBrush}" BorderBrush="#394453" FontFamily="Consolas" Text="http://127.0.0.1:10809"/>
+                </DockPanel>
+                <TextBlock Text="Укажи HTTP-прокси, например http://127.0.0.1:10809, или direct для прямого подключения. Изменение применяется после перезапуска ASTER." TextWrapping="Wrap" FontSize="9" Foreground="{StaticResource MutedBrush}" Margin="0,0,0,8"/>
                 <TextBlock x:Name="ChatGPTStatusText" Text="Проверяем подключение…" FontSize="11" Margin="0,0,0,10"/>
                 <StackPanel Orientation="Horizontal">
                     <Button x:Name="SignInButton" Content="Continue with ChatGPT" Click="SignIn_Click" Background="{StaticResource AccentBrush}" Foreground="#17191D" BorderBrush="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
