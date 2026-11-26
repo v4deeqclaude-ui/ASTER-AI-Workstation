@@ -1,13 +1,25 @@
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using ASTER.Workstation.Core.Services;
 
 namespace ASTER.Workstation.App;
 
 public static class OpenAiResponsesClient
 {
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromMinutes(2) };
+    private static readonly HttpClient Http = CreateHttpClient();
+
+    private static HttpClient CreateHttpClient()
+    {
+        var proxyPath = Path.Combine(AppPaths.Root, "chatgpt-proxy.txt");
+        var proxySetting = File.Exists(proxyPath) ? File.ReadAllText(proxyPath).Trim() : "http://127.0.0.1:10809";
+        HttpMessageHandler handler = string.Equals(proxySetting, "direct", StringComparison.OrdinalIgnoreCase)
+            ? new HttpClientHandler()
+            : new HttpClientHandler { Proxy = new WebProxy(proxySetting), UseProxy = true };
+        return new HttpClient(handler) { Timeout = TimeSpan.FromMinutes(2) };
+    }
 
     public static async Task<string> SendAsync(
         string apiKey,
