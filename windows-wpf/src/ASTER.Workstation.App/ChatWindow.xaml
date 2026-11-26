@@ -1,8 +1,6 @@
-<Window x:Class="ASTER.Workstation.App.ChatWindow"
+<UserControl x:Class="ASTER.Workstation.App.ChatWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="ASTER — AI-ассистент" Height="700" Width="900"
-        MinHeight="520" MinWidth="680" WindowStartupLocation="CenterOwner"
         Background="{StaticResource WindowBrush}" Foreground="{StaticResource TextBrush}">
     <Grid Margin="22">
         <Grid.RowDefinitions>
@@ -46,4 +44,4 @@
                     BorderBrush="{StaticResource AccentBrush}" FontWeight="SemiBold" Click="Send_Click"/>
         </Grid>
     </Grid>
-</Window>
+</UserControl>
