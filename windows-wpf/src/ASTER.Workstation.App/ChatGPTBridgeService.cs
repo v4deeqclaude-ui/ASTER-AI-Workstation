@@ -145,7 +145,7 @@ public sealed class ChatGPTBridgeService
         if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) ||
             uri.Scheme != Uri.UriSchemeHttps ||
             !string.Equals(uri.Host, "auth.openai.com", StringComparison.OrdinalIgnoreCase) ||
-            uri.Port != 443 || (uri.AbsolutePath != "/authorize" && uri.AbsolutePath != "/oauth/authorize"))
+            uri.Port != 443 || !string.IsNullOrEmpty(uri.UserInfo))
             throw new InvalidOperationException("ASTER заблокировал неизвестный адрес авторизации.");
         Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
     }
