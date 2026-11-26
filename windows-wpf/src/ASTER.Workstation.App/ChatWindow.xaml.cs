@@ -74,7 +74,7 @@ public partial class ChatWindow : UserControl
         if (!sharing && string.IsNullOrWhiteSpace(apiKey))
         {
             StatusText.Text = "Подключи ChatGPT в настройках или отдельно добавь OpenAI API-ключ.";
-            MessageBox.Show(this, "Для AI-чата нужно подключить ChatGPT через браузер или сохранить отдельный OpenAI API-ключ в настройках.",
+            MessageBox.Show("Для AI-чата нужно подключить ChatGPT через браузер или сохранить отдельный OpenAI API-ключ в настройках.",
                 "ASTER — требуется подключение", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
