@@ -1,10 +1,9 @@
 using System.Collections.ObjectModel;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using ASTER.Workstation.Core.Services;
 using ASTER.Workstation.Data.Database;
-using Microsoft.Data.Sqlite;
 
 namespace ASTER.Workstation.App;
 
@@ -37,8 +36,12 @@ public partial class ChatWindow : UserControl
         command.CommandText = "SELECT Role, Content FROM AiMessages ORDER BY Id;";
         await using var reader = await command.ExecuteReaderAsync();
         var loadedCount = 0;
-        while (await reader.ReadAsync()) { AddMessage(reader.GetString(0), reader.GetString(1)); loadedCount++; }
-        WorkspaceActivityLog.Write("CHAT", $"Загружена история AI-чата: {loadedCount} сообщений.");
+        while (await reader.ReadAsync())
+        {
+            AddMessage(reader.GetString(0), reader.GetString(1));
+            loadedCount++;
+        }
+        WorkspaceActivityLog.Write("CHAT", $"Загружена история локального AI-чата: {loadedCount} сообщений.");
         ScrollToEnd();
     }
 
@@ -46,7 +49,7 @@ public partial class ChatWindow : UserControl
 
     private async void MessageInput_KeyDown(object sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter && Keyboard.Modifiers == ModifierKeys.Control)
+        if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Shift) == 0)
         {
             e.Handled = true;
             await SendMessageAsync();
@@ -58,62 +61,31 @@ public partial class ChatWindow : UserControl
         var text = MessageInput.Text.Trim();
         if (_sending || string.IsNullOrWhiteSpace(text)) return;
 
-        JsonElement session;
-        try { session = await ChatGPTBridgeService.Shared.GetSessionAsync(); }
-        catch { session = default; }
-        var chatGPTConnected = session.ValueKind == JsonValueKind.Object &&
-            session.TryGetProperty("status", out var status) && status.GetString() == "connected";
-        var sharing = chatGPTConnected && session.TryGetProperty("sharing", out var share) && share.GetBoolean();
-        var apiKey = WindowsCredentialStore.ReadApiKey();
-
-        if (chatGPTConnected && !sharing)
-        {
-            StatusText.Text = "ChatGPT подключён, но plan sharing не разрешён. Проверь разрешения аккаунта в ChatGPT.";
-            return;
-        }
-        if (!sharing && string.IsNullOrWhiteSpace(apiKey))
-        {
-            StatusText.Text = "Подключи ChatGPT в настройках или отдельно добавь OpenAI API-ключ.";
-            MessageBox.Show("Для AI-чата нужно подключить ChatGPT через браузер или сохранить отдельный OpenAI API-ключ в настройках.",
-                "ASTER — требуется подключение", MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
-        }
-
+        var settings = AiProviderSettings.Load();
         _sending = true;
         SendButton.IsEnabled = false;
         MessageInput.IsEnabled = false;
         MessageInput.Clear();
-        WorkspaceActivityLog.Write("CHAT", $"Отправлено сообщение ассистенту (символов: {text.Length}). Содержимое не записывается в системный журнал.");
+
+        WorkspaceActivityLog.Write("CHAT", $"Отправлено сообщение локальной модели (символов: {text.Length}). Содержимое не записывается в системный журнал.");
         AddMessage("user", text);
         await SaveMessageAsync("user", text);
-        StatusText.Text = sharing ? "ASTER использует подключение ChatGPT…" : "ASTER отправляет запрос через OpenAI API…";
+        StatusText.Text = $"ASTER обращается к локальной модели {settings.OllamaModel}…";
 
         try
         {
             var history = await ReadRecentMessagesAsync(24);
-            string answer;
-            if (sharing)
-            {
-                var modelsElement = await ChatGPTBridgeService.Shared.RequestModelsAsync();
-                var model = modelsElement.EnumerateArray().Select(x => x.TryGetProperty("slug", out var slug) ? slug.GetString() : null)
-                    .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
-                if (string.IsNullOrWhiteSpace(model)) throw new InvalidOperationException("ChatGPT не вернул доступные модели.");
-                answer = await ChatGPTBridgeService.Shared.SendAsync(model, history);
-            }
-            else
-            {
-                answer = await OpenAiResponsesClient.SendAsync(apiKey!, "gpt-4.1-mini", history);
-            }
+            var answer = await OllamaChatClient.SendAsync(settings.OllamaEndpoint, settings.OllamaModel, history);
             AddMessage("assistant", answer);
             await SaveMessageAsync("assistant", answer);
-            StatusText.Text = sharing ? "Ответ получен через ChatGPT. История сохранена локально." : "Ответ получен через OpenAI API. История сохранена локально.";
-            WorkspaceActivityLog.Write("CHAT", sharing ? "Получен ответ от ChatGPT; история сохранена." : "Получен ответ от OpenAI API; история сохранена.");
+            StatusText.Text = "Ответ получен от локальной модели. История сохранена на компьютере.";
+            WorkspaceActivityLog.Write("CHAT", "Получен ответ от локальной модели Ollama; история сохранена.");
         }
         catch (Exception ex)
         {
-            StatusText.Text = "Не удалось получить ответ.";
+            StatusText.Text = "Не удалось получить ответ от Ollama.";
             AddMessage("system", "Ошибка: " + ex.Message);
-            WorkspaceActivityLog.Write("ERROR", "Ошибка AI-запроса: " + ex.Message);
+            WorkspaceActivityLog.Write("ERROR", "Ошибка локального AI-запроса: " + ex.Message);
         }
         finally
         {

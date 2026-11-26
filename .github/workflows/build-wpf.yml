@@ -6,6 +6,7 @@ on:
       - feature/wpf-foundation-0.1
       - feature/aster-ai-chat-0.2
       - feature/aster-chatgpt-plan-auth
+      - fix/aster-oauth-diagnostics-2026-11
     paths:
       - 'windows-wpf/**'
       - '.github/workflows/build-wpf.yml'
@@ -26,100 +27,25 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Setup Node.js 22
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22.12.0'
-
-      - name: Checkout pinned OpenAI Sign in with ChatGPT DevKit
-        shell: pwsh
-        run: |
-          git clone https://github.com/openai/sign-in-with-chatgpt-devkit.git devkit
-          git -C devkit checkout 0a36fefeb913055c8c7a1a29b63d82b96b2e841a
-
-          # Preserve a safe reference to unexpected low-level errors. The SDK normally
-          # normalizes them to connection_error; ASTER displays only cause type/code.
-          $errorsPath = "devkit/packages/local/src/errors.ts"
-          $errorsSource = Get-Content $errorsPath -Raw
-          $oldErrorLine = '  return new ChatGPTError("connection_error", "The connection could not be completed. Try again.", true);'
-          $newErrorLine = @'
-            const wrapped = new ChatGPTError("connection_error", "The connection could not be completed. Try again.", true);
-            Object.defineProperty(wrapped, "cause", { value: error, enumerable: false });
-            return wrapped;
-          '@
-          if (-not $errorsSource.Contains($oldErrorLine)) { throw "Could not apply safe SDK error-diagnostics patch." }
-          $errorsSource = $errorsSource.Replace($oldErrorLine, $newErrorLine.Trim())
-          Set-Content -Path $errorsPath -Value $errorsSource -NoNewline
-
-          npm ci --prefix devkit
-          npm run build -w @siwc/local --prefix devkit
-
-      - name: Stage official SDK and notices
-        shell: pwsh
-        run: |
-          $vendor = "windows-wpf/aster-chatgpt-bridge/vendor/siwc-local"
-          New-Item -ItemType Directory -Force $vendor | Out-Null
-          Copy-Item "devkit/packages/local/package.json" "$vendor/package.json"
-          Copy-Item "devkit/packages/local/LICENSE" "$vendor/LICENSE"
-          Copy-Item "devkit/packages/local/dist" "$vendor/dist" -Recurse
-          Copy-Item "devkit/THIRD_PARTY_NOTICES.md" "windows-wpf/aster-chatgpt-bridge/THIRD_PARTY_NOTICES.md"
-          Copy-Item "devkit/LICENSE" "windows-wpf/aster-chatgpt-bridge/OPENAI-DEVKIT-LICENSE"
-          npm install --prefix windows-wpf/aster-chatgpt-bridge --omit=dev --no-audit --no-fund
-
-      - name: Test helper protocol and Windows DPAPI
-        shell: pwsh
-        run: |
-          $result = node windows-wpf/aster-chatgpt-bridge/bridge.mjs --self-test | ConvertFrom-Json
-          if (-not $result.ok -or -not $result.browserAllowlist) { throw "ChatGPT bridge self-test failed." }
-          Write-Host "ChatGPT bridge self-test passed."
-
       - name: Restore WPF dependencies
         run: dotnet restore windows-wpf/ASTER.Workstation.sln
 
       - name: Publish Windows x64 application
         run: dotnet publish windows-wpf/src/ASTER.Workstation.App/ASTER.Workstation.App.csproj --configuration Release --runtime win-x64 --self-contained true --output windows-wpf/artifacts/publish
 
-      - name: Package ChatGPT bridge and Node runtime
+      - name: Verify Ollama client is included
         shell: pwsh
-        timeout-minutes: 15
         run: |
-          $source = "windows-wpf/aster-chatgpt-bridge"
-          $destination = "windows-wpf/artifacts/publish/ChatGPTBridge"
-          New-Item -ItemType Directory -Force $destination | Out-Null
-
-          # Install dependencies directly in the final app folder.
-          # This avoids copying tens of thousands of files from node_modules.
-          Copy-Item "$source/bridge.mjs" "$destination/bridge.mjs"
-          Copy-Item "$source/package.json" "$destination/package.json"
-          Copy-Item "$source/OPENAI-DEVKIT-LICENSE" "$destination/OPENAI-DEVKIT-LICENSE"
-          Copy-Item "$source/THIRD_PARTY_NOTICES.md" "$destination/THIRD_PARTY_NOTICES.md"
-          New-Item -ItemType Directory -Force "$destination/vendor/siwc-local" | Out-Null
-          Copy-Item "$source/vendor/siwc-local/package.json" "$destination/vendor/siwc-local/package.json"
-          Copy-Item "$source/vendor/siwc-local/LICENSE" "$destination/vendor/siwc-local/LICENSE"
-          Copy-Item "$source/vendor/siwc-local/dist" "$destination/vendor/siwc-local/dist" -Recurse
-
-          Push-Location $destination
-          try {
-            npm install --omit=dev --no-audit --no-fund --prefer-offline --no-progress
-            if ($LASTEXITCODE -ne 0) { throw "npm install failed with exit code $LASTEXITCODE." }
-            node --input-type=module -e "await import('@siwc/local'); await import('@primno/dpapi'); console.log('Bridge dependencies verified.')"
-            if ($LASTEXITCODE -ne 0) { throw "Bridge dependency verification failed with exit code $LASTEXITCODE." }
+          $publish = "windows-wpf/artifacts/publish"
+          if (-not (Test-Path "$publish/ASTER.Workstation.exe")) {
+            throw "ASTER executable was not produced."
           }
-          finally {
-            Pop-Location
-          }
+          Write-Host "ASTER Ollama-only application published."
 
-          $nodeExe = (Get-Command node).Source
-          Copy-Item $nodeExe "$destination/node.exe"
-          if (-not (Test-Path "$destination/node.exe")) { throw "Bundled Node.js runtime is missing." }
-          if (-not (Test-Path "$destination/node_modules/@siwc/local")) { throw "Installed @siwc/local dependency is missing." }
-          if (-not (Test-Path "$destination/node_modules/@primno/dpapi")) { throw "Installed @primno/dpapi dependency is missing." }
-          Write-Host "ChatGPT bridge packaging completed and dependencies verified."
-          
       - name: Upload Windows application
         uses: actions/upload-artifact@v4
         with:
-          name: ASTER-AI-Workstation-0.2-chatgpt-auth-win-x64
+          name: ASTER-AI-Workstation-0.3-ollama-win-x64
           path: windows-wpf/artifacts/publish/
           if-no-files-found: error
           retention-days: 14
