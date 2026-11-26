@@ -31,7 +31,7 @@
             </DockPanel>
         </Border>
 
-        <Grid Grid.Column="1" Margin="30,25,30,20">
+        <Grid x:Name="HomePage" Grid.Column="1" Margin="30,25,30,20">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -127,5 +127,6 @@
                 <Button Content="Создать резервную копию" HorizontalAlignment="Right" Padding="11,6" FontSize="10" Click="Backup_Click" />
             </Grid>
         </Grid>
+        <ContentControl x:Name="EmbeddedPage" Grid.Column="1" Margin="30,25,30,20" Visibility="Collapsed" />
     </Grid>
 </Window>
