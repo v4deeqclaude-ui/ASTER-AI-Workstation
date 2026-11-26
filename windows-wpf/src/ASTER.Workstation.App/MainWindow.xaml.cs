@@ -25,7 +25,8 @@ public partial class MainWindow : Window
         _database = new SqliteDatabase();
         _repository = new ProjectRepository(_database);
         ProjectsList.ItemsSource = _projects;
-        Loaded += MainWindow_Loaded;\n        WorkspaceActivityLog.Write("ASTER", "Главное окно приложения создано.");
+        Loaded += MainWindow_Loaded;
+        WorkspaceActivityLog.Write("ASTER", "Главное окно приложения создано.");
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
@@ -35,14 +36,17 @@ public partial class MainWindow : Window
             AppPaths.EnsureCreated();
             await _repository.InitializeAsync();
             await LoadProjectsAsync();
-            _isReady = true;\n            WorkspaceActivityLog.Write("PROJECTS", $"Загружено проектов: {_projects.Count}.");\n            WorkspaceActivityLog.Write("ASTER", "Приложение готово к работе.");
+            _isReady = true;
+            WorkspaceActivityLog.Write("PROJECTS", $"Загружено проектов: {_projects.Count}.");
+            WorkspaceActivityLog.Write("ASTER", "Приложение готово к работе.");
             SetStatus("Готово. Проекты и настройки хранятся локально.");
         }
         catch (Exception ex)
         {
             MessageBox.Show(this, "Не удалось подготовить локальную базу данных.\n\n" + ex.Message,
                 "ASTER — ошибка запуска", MessageBoxButton.OK, MessageBoxImage.Error);
-            SetStatus("Ошибка инициализации базы данных.");\n            WorkspaceActivityLog.Write("ERROR", "Ошибка инициализации базы данных: " + ex.Message);
+            SetStatus("Ошибка инициализации базы данных.");
+            WorkspaceActivityLog.Write("ERROR", "Ошибка инициализации базы данных: " + ex.Message);
         }
     }
 
@@ -99,7 +103,8 @@ public partial class MainWindow : Window
             await _repository.AddAsync(project);
             await LoadProjectsAsync();
             ProjectsList.SelectedItem = _projects.FirstOrDefault(p => p.Id == project.Id);
-            SetStatus($"Проект «{project.Name}» добавлен. Исходная папка не изменялась.");\n            WorkspaceActivityLog.Write("PROJECTS", $"Добавлен проект: {project.Name}.");
+            SetStatus($"Проект «{project.Name}» добавлен. Исходная папка не изменялась.");
+            WorkspaceActivityLog.Write("PROJECTS", $"Добавлен проект: {project.Name}.");
         }
         catch (Exception ex)
         {
@@ -118,7 +123,8 @@ public partial class MainWindow : Window
 
         await _repository.DeleteAsync(project.Id);
         await LoadProjectsAsync();
-        SetStatus("Проект убран из списка. Файлы на диске не затронуты.");\n        WorkspaceActivityLog.Write("PROJECTS", $"Проект убран из списка: {project.Name}.");
+        SetStatus("Проект убран из списка. Файлы на диске не затронуты.");
+        WorkspaceActivityLog.Write("PROJECTS", $"Проект убран из списка: {project.Name}.");
     }
 
     private async void ProjectsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -140,7 +146,8 @@ public partial class MainWindow : Window
             FilesTree.Items.Add(CreateTreeItem(item, 0));
 
         await _repository.UpdateLastOpenedAsync(project.Id);
-        SetStatus($"Открыт обзор проекта: {project.Name}. Режим только чтения.");\n        WorkspaceActivityLog.Write("PROJECTS", $"Открыт проект: {project.Name}.");
+        SetStatus($"Открыт обзор проекта: {project.Name}. Режим только чтения.");
+        WorkspaceActivityLog.Write("PROJECTS", $"Открыт проект: {project.Name}.");
     }
 
     private TreeViewItem CreateTreeItem(FolderItem item, int depth)
@@ -169,7 +176,9 @@ public partial class MainWindow : Window
         if (ProjectsList.SelectedItem is ProjectEntry selected)
             SetStatus($"Список обновлён. Выбран проект: {selected.Name}.");
         else
-            SetStatus("Список проектов обновлён.");\n        WorkspaceActivityLog.Write("PROJECTS", "Выполнено обновление списка проектов.");\n        WorkspaceActivityLog.Write("PROJECTS", "Список проектов обновлён.");
+            SetStatus("Список проектов обновлён.");
+        WorkspaceActivityLog.Write("PROJECTS", "Выполнено обновление списка проектов.");
+        WorkspaceActivityLog.Write("PROJECTS", "Список проектов обновлён.");
     }
 
     private async void Backup_Click(object sender, RoutedEventArgs e)
@@ -188,7 +197,8 @@ public partial class MainWindow : Window
             var fileName = $"aster-workstation-{DateTime.Now:yyyyMMdd-HHmmss}.db";
             var destination = Path.Combine(AppPaths.BackupDirectory, fileName);
             File.Copy(AppPaths.DatabaseFile, destination, overwrite: false);
-            SetStatus("Резервная копия создана: " + destination);\n            WorkspaceActivityLog.Write("BACKUP", "Создана резервная копия базы данных.");
+            SetStatus("Резервная копия создана: " + destination);
+            WorkspaceActivityLog.Write("BACKUP", "Создана резервная копия базы данных.");
             MessageBox.Show(this, "Резервная копия базы данных создана.\n\n" + destination,
                 "ASTER — резервирование", MessageBoxButton.OK, MessageBoxImage.Information);
         }
@@ -206,14 +216,16 @@ public partial class MainWindow : Window
         HomePage.Visibility = Visibility.Visible;
         PageTitle.Text = "Главная";
         PageSubtitle.Text = "Твоя рабочая среда для создания игр.";
-        SetStatus("Главная рабочая область ASTER.");\n        WorkspaceActivityLog.Write("NAVIGATION", "Открыт раздел «Главная».");
+        SetStatus("Главная рабочая область ASTER.");
+        WorkspaceActivityLog.Write("NAVIGATION", "Открыт раздел «Главная».");
     }
 
     private void Projects_Click(object sender, RoutedEventArgs e)
     {
         PageTitle.Text = "Проекты";
         PageSubtitle.Text = "Добавляй существующие папки и переключайся между проектами.";
-        SetStatus("Управление проектами доступно в версии 0.1.");\n        WorkspaceActivityLog.Write("NAVIGATION", "Открыт раздел «Проекты».");
+        SetStatus("Управление проектами доступно в версии 0.1.");
+        WorkspaceActivityLog.Write("NAVIGATION", "Открыт раздел «Проекты».");
     }
 
     private void Applications_Click(object sender, RoutedEventArgs e)
@@ -237,7 +249,8 @@ public partial class MainWindow : Window
         HomePage.Visibility = Visibility.Collapsed;
         EmbeddedPage.Content = new ChatWindow(_database);
         EmbeddedPage.Visibility = Visibility.Visible;
-        SetStatus("AI-ассистент открыт внутри ASTER. Остальные разделы остаются доступны.");\n        WorkspaceActivityLog.Write("NAVIGATION", "Открыт встроенный AI-ассистент.");
+        SetStatus("AI-ассистент открыт внутри ASTER. Остальные разделы остаются доступны.");
+        WorkspaceActivityLog.Write("NAVIGATION", "Открыт встроенный AI-ассистент.");
     }
 
     private void Terminal_Click(object sender, RoutedEventArgs e)
