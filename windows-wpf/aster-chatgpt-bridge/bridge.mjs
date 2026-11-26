@@ -37,14 +37,26 @@ globalThis.fetch = async (input, init) => {
   if (!monitoredHost) return nativeFetch(input, init);
   const method = String(init?.method || (typeof Request !== "undefined" && input instanceof Request ? input.method : "GET")).toUpperCase();
   const endpoint = target.hostname + target.pathname;
-  emit({ type: "diagnostic", message: `Сетевой запрос OAuth: ${method} ${endpoint}.` });
+  let grantType = "";
+  try {
+    const body = init?.body;
+    if (body instanceof URLSearchParams) grantType = body.get("grant_type") || "";
+    else if (typeof body === "string") grantType = new URLSearchParams(body).get("grant_type") || "";
+  } catch { /* Only an allowlisted grant type is logged. */ }
+  const safeGrantType = ["authorization_code", "refresh_token"].includes(grantType) ? grantType : "";
+  emit({ type: "diagnostic", message: `Сетевой запрос OAuth: ${method} ${endpoint}${safeGrantType ? " · grant_type: " + safeGrantType : ""}.` });
   try {
     const response = await nativeFetch(input, init);
     let oauthError = "";
     if (!response.ok && /token/i.test(target.pathname)) {
       try {
         const body = await response.clone().json();
-        if (typeof body?.error === "string" && /^[a-z0-9_.-]{1,64}$/i.test(body.error)) oauthError = `; OAuth-код: ${body.error}`;
+        const parts = [];
+        if (typeof body?.error === "string" && /^[a-z0-9_.-]{1,64}$/i.test(body.error)) parts.push("OAuth-код: " + body.error);
+        if (typeof body?.error_reason === "string" && /^[a-z0-9_.-]{1,80}$/i.test(body.error_reason)) parts.push("причина: " + body.error_reason);
+        const requestId = response.headers.get("x-request-id");
+        if (requestId && /^[a-zA-Z0-9_-]{1,100}$/.test(requestId)) parts.push("request-id: " + requestId);
+        if (parts.length) oauthError = "; " + parts.join("; ");
       } catch { /* Response body is intentionally not logged. */ }
     }
     emit({ type: "diagnostic", message: `Ответ OAuth: HTTP ${response.status} от ${target.hostname}${oauthError}.` });
