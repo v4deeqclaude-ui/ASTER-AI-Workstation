@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text.Json;
 using ASTER.Workstation.Core.Services;
 
@@ -5,7 +6,6 @@ namespace ASTER.Workstation.App;
 
 public sealed class AiProviderSettings
 {
-    public string Provider { get; set; } = "ollama";
     public string OllamaEndpoint { get; set; } = "http://localhost:11434";
     public string OllamaModel { get; set; } = "qwen3:1.7b";
 
