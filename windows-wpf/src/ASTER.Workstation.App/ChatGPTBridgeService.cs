@@ -28,6 +28,7 @@ public sealed class ChatGPTBridgeService
         safe = System.Text.RegularExpressions.Regex.Replace(safe, @"(?i)(bearer\s+|access[_ -]?token[=: ]+|refresh[_ -]?token[=: ]+|client[_ -]?secret[=: ]+)[^\s,;]+", "$1[скрыто]");
         if (safe.Length > 500) safe = safe[..500];
         DiagnosticReceived?.Invoke($"[{DateTime.Now:HH:mm:ss}] {safe}");
+        WorkspaceActivityLog.Write("CHATGPT", safe);
     }
 
     private ChatGPTBridgeService() { }
