@@ -45,7 +45,7 @@ public partial class TerminalWindow : Window
         CommandBox.Clear();
         OutputBox.AppendText($"> {command}{Environment.NewLine}");
         OutputBox.ScrollToEnd();
-        WorkspaceActivityLog.Write("TERMINAL", "Запуск команды: " + command);
+        WorkspaceActivityLog.Write("TERMINAL", "Пользователь запустил команду в терминале. Текст команды не копируется в общий журнал.");
 
         var start = new ProcessStartInfo("cmd.exe")
         {
