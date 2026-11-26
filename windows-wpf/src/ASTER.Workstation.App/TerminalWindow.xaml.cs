@@ -112,5 +112,9 @@ public partial class TerminalWindow : Window
         catch (Exception ex) { AppendOutput("[Ошибка остановки] " + ex.Message, true); }
     }
 
-    private void Clear_Click(object sender, RoutedEventArgs e)\n    {\n        OutputBox.Clear();\n        OutputBox.AppendText("Экран очищен. Новые события продолжат отображаться." + Environment.NewLine);\n    }
+    private void Clear_Click(object sender, RoutedEventArgs e)
+    {
+        OutputBox.Clear();
+        OutputBox.AppendText("Экран очищен. Новые события продолжат отображаться." + Environment.NewLine);
+    }
 }
