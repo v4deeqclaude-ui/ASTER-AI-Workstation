@@ -1,11 +1,9 @@
 using System.Collections.ObjectModel;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using ASTER.Workstation.Core.Services;
 using ASTER.Workstation.Data.Database;
-using Microsoft.Data.Sqlite;
 
 namespace ASTER.Workstation.App;
 
@@ -38,8 +36,12 @@ public partial class ChatWindow : UserControl
         command.CommandText = "SELECT Role, Content FROM AiMessages ORDER BY Id;";
         await using var reader = await command.ExecuteReaderAsync();
         var loadedCount = 0;
-        while (await reader.ReadAsync()) { AddMessage(reader.GetString(0), reader.GetString(1)); loadedCount++; }
-        WorkspaceActivityLog.Write("CHAT", $"Загружена история AI-чата: {loadedCount} сообщений.");
+        while (await reader.ReadAsync())
+        {
+            AddMessage(reader.GetString(0), reader.GetString(1));
+            loadedCount++;
+        }
+        WorkspaceActivityLog.Write("CHAT", $"Загружена история локального AI-чата: {loadedCount} сообщений.");
         ScrollToEnd();
     }
 
@@ -59,88 +61,31 @@ public partial class ChatWindow : UserControl
         var text = MessageInput.Text.Trim();
         if (_sending || string.IsNullOrWhiteSpace(text)) return;
 
-        var providerSettings = AiProviderSettings.Load();
-        var provider = providerSettings.Provider;
-        var apiKey = provider == "openai" ? WindowsCredentialStore.ReadApiKey() : null;
-        var sharing = false;
-
-        if (provider == "openai" && string.IsNullOrWhiteSpace(apiKey))
-        {
-            StatusText.Text = "Для OpenAI API сначала сохрани ключ в настройках ASTER.";
-            MessageBox.Show("Выбран OpenAI API, но ключ не сохранён. Открой настройки ASTER и добавь API-ключ. Использование API оплачивается отдельно.",
-                "ASTER — требуется API-ключ", MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
-        }
-
-        if (provider == "chatgpt")
-        {
-            try
-            {
-                var session = await ChatGPTBridgeService.Shared.GetSessionAsync();
-                sharing = session.ValueKind == JsonValueKind.Object &&
-                    session.TryGetProperty("status", out var status) && status.GetString() == "connected" &&
-                    session.TryGetProperty("sharing", out var share) && share.GetBoolean();
-            }
-            catch { sharing = false; }
-
-            if (!sharing)
-            {
-                StatusText.Text = "ChatGPT plan sharing не подключён. Выбери Ollama или OpenAI API в настройках.";
-                return;
-            }
-        }
-
+        var settings = AiProviderSettings.Load();
         _sending = true;
         SendButton.IsEnabled = false;
         MessageInput.IsEnabled = false;
         MessageInput.Clear();
-        WorkspaceActivityLog.Write("CHAT", $"Отправлено сообщение ассистенту (символов: {text.Length}). Содержимое не записывается в системный журнал.");
+
+        WorkspaceActivityLog.Write("CHAT", $"Отправлено сообщение локальной модели (символов: {text.Length}). Содержимое не записывается в системный журнал.");
         AddMessage("user", text);
         await SaveMessageAsync("user", text);
-        StatusText.Text = provider switch
-        {
-            "ollama" => $"ASTER обращается к локальной модели {providerSettings.OllamaModel}…",
-            "chatgpt" => "ASTER использует подключение ChatGPT…",
-            _ => "ASTER отправляет запрос через OpenAI API…"
-        };
+        StatusText.Text = $"ASTER обращается к локальной модели {settings.OllamaModel}…";
 
         try
         {
             var history = await ReadRecentMessagesAsync(24);
-            string answer;
-            if (provider == "ollama")
-            {
-                answer = await OllamaChatClient.SendAsync(
-                    providerSettings.OllamaEndpoint, providerSettings.OllamaModel, history);
-            }
-            else if (provider == "chatgpt")
-            {
-                var modelsElement = await ChatGPTBridgeService.Shared.RequestModelsAsync();
-                var model = modelsElement.EnumerateArray().Select(x => x.TryGetProperty("slug", out var slug) ? slug.GetString() : null)
-                    .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
-                if (string.IsNullOrWhiteSpace(model)) throw new InvalidOperationException("ChatGPT не вернул доступные модели.");
-                answer = await ChatGPTBridgeService.Shared.SendAsync(model, history);
-            }
-            else
-            {
-                answer = await OpenAiResponsesClient.SendAsync(apiKey!, "gpt-4.1-mini", history);
-            }
-
+            var answer = await OllamaChatClient.SendAsync(settings.OllamaEndpoint, settings.OllamaModel, history);
             AddMessage("assistant", answer);
             await SaveMessageAsync("assistant", answer);
-            StatusText.Text = provider switch
-            {
-                "ollama" => "Ответ получен от локальной модели. История сохранена на компьютере.",
-                "chatgpt" => "Ответ получен через ChatGPT. История сохранена локально.",
-                _ => "Ответ получен через OpenAI API. История сохранена локально."
-            };
-            WorkspaceActivityLog.Write("CHAT", $"Получен ответ от провайдера {provider}; история сохранена.");
+            StatusText.Text = "Ответ получен от локальной модели. История сохранена на компьютере.";
+            WorkspaceActivityLog.Write("CHAT", "Получен ответ от локальной модели Ollama; история сохранена.");
         }
         catch (Exception ex)
         {
-            StatusText.Text = "Не удалось получить ответ.";
+            StatusText.Text = "Не удалось получить ответ от Ollama.";
             AddMessage("system", "Ошибка: " + ex.Message);
-            WorkspaceActivityLog.Write("ERROR", "Ошибка AI-запроса: " + ex.Message);
+            WorkspaceActivityLog.Write("ERROR", "Ошибка локального AI-запроса: " + ex.Message);
         }
         finally
         {
