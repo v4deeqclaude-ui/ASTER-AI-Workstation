@@ -12,7 +12,7 @@
         <StackPanel Grid.Row="0" Margin="0,0,0,16">
             <TextBlock Text="AI-АССИСТЕНТ ASTER" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
             <TextBlock Text="Рабочий диалог" FontSize="23" FontWeight="SemiBold" Margin="0,4,0,0"/>
-            <TextBlock Text="OpenAI · Responses API · история хранится локально" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0"/>
+            <TextBlock Text="Локальный ИИ Ollama или облачный провайдер · история хранится локально" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0"/>
         </StackPanel>
         <Border Grid.Row="1" Background="{StaticResource PanelBrush}" BorderBrush="#2A323D" BorderThickness="1" CornerRadius="10" Padding="12">
             <ListBox x:Name="MessagesList" ScrollViewer.VerticalScrollBarVisibility="Auto">

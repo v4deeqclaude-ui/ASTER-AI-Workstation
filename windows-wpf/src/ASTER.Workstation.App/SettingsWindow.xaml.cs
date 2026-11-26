@@ -13,8 +13,15 @@ public partial class SettingsWindow : Window
         WorkspaceActivityLog.Write("SETTINGS", "Открыты настройки приложения.");
         var proxyPath = Path.Combine(AppPaths.Root, "chatgpt-proxy.txt");
         ProxyBox.Text = File.Exists(proxyPath) ? File.ReadAllText(proxyPath).Trim() : "http://127.0.0.1:10809";
+
+        var aiSettings = AiProviderSettings.Load();
+        ProviderBox.SelectedValue = aiSettings.Provider;
+        OllamaEndpointBox.Text = aiSettings.OllamaEndpoint;
+        OllamaModelBox.Text = aiSettings.OllamaModel;
+        LocalAiStatusText.Text = "Локальный ИИ ещё не проверен.";
+
         ChatGPTBridgeService.Shared.DiagnosticReceived += OnDiagnosticReceived;
-        AddConsoleLine("Консоль готова. Здесь будут отображаться события подключения ChatGPT.");
+        AddConsoleLine("Консоль готова. Здесь будут отображаться события подключения.");
         KeyStatusText.Text = string.IsNullOrWhiteSpace(WindowsCredentialStore.ReadApiKey())
             ? "Ключ не сохранён."
             : "API-ключ уже сохранён в Windows.";
@@ -42,6 +49,80 @@ public partial class SettingsWindow : Window
     {
         ChatGPTBridgeService.Shared.DiagnosticReceived -= OnDiagnosticReceived;
         base.OnClosed(e);
+    }
+
+    private void SaveAiProvider_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            var endpoint = OllamaEndpointBox.Text.Trim().TrimEnd('/');
+            if (!Uri.TryCreate(endpoint, UriKind.Absolute, out var uri) ||
+                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+            {
+                StatusText.Text = "Укажи корректный адрес Ollama, например http://localhost:11434.";
+                return;
+            }
+
+            var model = OllamaModelBox.Text.Trim();
+            if (string.IsNullOrWhiteSpace(model))
+            {
+                StatusText.Text = "Укажи название локальной модели, например qwen3:1.7b.";
+                return;
+            }
+
+            var selectedProvider = ProviderBox.SelectedValue?.ToString() ?? "ollama";
+            new AiProviderSettings
+            {
+                Provider = selectedProvider,
+                OllamaEndpoint = endpoint,
+                OllamaModel = model
+            }.Save();
+
+            StatusText.Text = selectedProvider switch
+            {
+                "ollama" => "Локальный ИИ выбран. Убедись, что Ollama запущен и модель установлена.",
+                "openai" => "Выбран OpenAI API. Для запросов нужен отдельный API-ключ.",
+                _ => "Выбран ChatGPT plan sharing. Требуется подтверждённое подключение."
+            };
+            AddConsoleLine("Сохранён выбранный AI-провайдер: " + selectedProvider + ".");
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Не удалось сохранить настройки ИИ: " + ex.Message;
+        }
+    }
+
+    private async void CheckOllama_Click(object sender, RoutedEventArgs e)
+    {
+        CheckOllamaButton.IsEnabled = false;
+        LocalAiStatusText.Text = "Проверяем Ollama и список моделей…";
+        try
+        {
+            var endpoint = OllamaEndpointBox.Text.Trim().TrimEnd('/');
+            var models = await OllamaChatClient.GetInstalledModelsAsync(endpoint);
+            var model = OllamaModelBox.Text.Trim();
+            if (models.Contains(model, StringComparer.OrdinalIgnoreCase))
+            {
+                LocalAiStatusText.Text = "Ollama доступен. Модель " + model + " установлена.";
+                AddConsoleLine("Проверка Ollama успешна; выбранная модель найдена.");
+            }
+            else
+            {
+                LocalAiStatusText.Text = models.Count == 0
+                    ? "Ollama отвечает, но установленных моделей не найдено."
+                    : "Ollama доступен, но модель " + model + " не найдена. Установленные: " + string.Join(", ", models);
+                AddConsoleLine("Ollama доступен; выбранная модель отсутствует.");
+            }
+        }
+        catch (Exception ex)
+        {
+            LocalAiStatusText.Text = "Ollama недоступен: " + ex.Message;
+            AddConsoleLine("Проверка Ollama завершилась ошибкой: " + ex.Message);
+        }
+        finally
+        {
+            CheckOllamaButton.IsEnabled = true;
+        }
     }
 
     private async Task RefreshChatGPTStatusAsync()
