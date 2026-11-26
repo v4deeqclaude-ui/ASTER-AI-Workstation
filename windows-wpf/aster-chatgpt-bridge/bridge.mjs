@@ -52,7 +52,7 @@ function browserUrlAllowed(value) {
   try {
     const url = new URL(value);
     return url.protocol === "https:" && url.hostname === "auth.openai.com" && url.port === "" &&
-      (url.pathname === "/authorize" || url.pathname === "/oauth/authorize");
+      !url.username && !url.password;
   } catch { return false; }
 }
 function ensureClient() {
