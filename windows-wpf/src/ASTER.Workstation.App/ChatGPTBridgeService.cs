@@ -79,9 +79,30 @@ public sealed class ChatGPTBridgeService
                 completion.TrySetResult(result.Clone());
             else
             {
-                var message = root.TryGetProperty("error", out var error) && error.TryGetProperty("message", out var text)
+                var errorMessage = root.TryGetProperty("error", out var error) ? error : default;
+                var message = errorMessage.ValueKind == JsonValueKind.Object && errorMessage.TryGetProperty("message", out var text)
                     ? text.GetString() : "Ошибка подключения ChatGPT.";
-                completion.TrySetException(new InvalidOperationException(message ?? "Ошибка подключения ChatGPT."));
+                var code = errorMessage.ValueKind == JsonValueKind.Object && errorMessage.TryGetProperty("code", out var codeElement)
+                    ? codeElement.GetString() : null;
+                var diagnostic = "";
+                if (errorMessage.ValueKind == JsonValueKind.Object && errorMessage.TryGetProperty("diagnostics", out var details) &&
+                    details.ValueKind == JsonValueKind.Object)
+                {
+                    var errorType = details.TryGetProperty("errorType", out var et) ? et.GetString() : null;
+                    var causeType = details.TryGetProperty("causeType", out var ct) ? ct.GetString() : null;
+                    var causeCode = details.TryGetProperty("causeCode", out var cc) ? cc.GetString() : null;
+                    diagnostic = string.Join(" · ", new[] {
+                        string.IsNullOrWhiteSpace(errorType) ? null : "тип: " + errorType,
+                        string.IsNullOrWhiteSpace(causeType) ? null : "причина: " + causeType,
+                        string.IsNullOrWhiteSpace(causeCode) ? null : "код: " + causeCode
+                    }.Where(x => x is not null));
+                }
+                var detail = string.Join(" · ", new[] {
+                    string.IsNullOrWhiteSpace(code) ? null : "Код: " + code,
+                    string.IsNullOrWhiteSpace(diagnostic) ? null : diagnostic
+                }.Where(x => x is not null));
+                completion.TrySetException(new InvalidOperationException(
+                    (message ?? "Ошибка подключения ChatGPT.") + (detail.Length == 0 ? "" : Environment.NewLine + detail)));
             }
         }
         catch { /* Malformed helper output is ignored; no raw output is logged. */ }
