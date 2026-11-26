@@ -57,7 +57,7 @@ public partial class SettingsWindow : Window
             ChatGPTStatusText.Text = status switch
             {
                 "connected" when sharing => "Подключено · доступ к ChatGPT plan sharing подтверждён" + (string.IsNullOrWhiteSpace(identity) ? "" : " · " + identity),
-                "connected" => "Аккаунт подключён, но разрешение на использование ChatGPT plan не предоставлено.",
+                "connected" => "Аккаунт ChatGPT подключён. Для AI-чата добавь OpenAI API-ключ ниже.",
                 "reauth_required" => "Требуется повторный вход в ChatGPT.",
                 "connecting" => "Выполняется вход в ChatGPT…",
                 _ => "ChatGPT не подключён."
@@ -86,7 +86,7 @@ public partial class SettingsWindow : Window
             AddConsoleLine("Авторизация завершена. Plan sharing: " + (sharing ? "доступен." : "не подтверждён."));
             ChatGPTStatusText.Text = sharing
                 ? "Вход выполнен. Разрешение на ChatGPT plan sharing подтверждено."
-                : "Вход выполнен, но ChatGPT plan sharing для этого аккаунта не разрешён.";
+                : "Вход в аккаунт выполнен. Для AI-чата используй отдельный OpenAI API-ключ.";
         }
         catch (Exception ex)
         {
