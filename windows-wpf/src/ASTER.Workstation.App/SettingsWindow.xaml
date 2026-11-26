@@ -19,7 +19,7 @@
         <Border Grid.Row="2" Background="{StaticResource PanelBrush}" BorderBrush="#394453" BorderThickness="1" CornerRadius="9" Padding="14" Margin="0,0,0,14">
             <StackPanel>
                 <TextBlock Text="ВХОД ЧЕРЕЗ CHATGPT" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
-                <TextBlock Text="Авторизация в браузере. ASTER не просит пароль и хранит сессию с защитой Windows DPAPI." TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,10"/>
+                <TextBlock Text="Безопасный вход в аккаунт ChatGPT без запроса доступа к тарифным лимитам. Пароль остаётся в браузере." TextWrapping="Wrap" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,6,0,10"/>
                 <TextBlock Text="ПРОКСИ ДЛЯ ПОДКЛЮЧЕНИЯ" FontSize="9" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" Margin="0,2,0,4"/>
                 <DockPanel Margin="0,0,0,8">
                     <Button Content="Сохранить" Click="SaveProxy_Click" DockPanel.Dock="Right" Margin="8,0,0,0" Padding="9,5"/>
@@ -35,8 +35,8 @@
         </Border>
         <Border Grid.Row="3" Background="{StaticResource PanelBrush}" BorderBrush="#394453" BorderThickness="1" CornerRadius="9" Padding="14">
             <StackPanel>
-                <TextBlock Text="OPENAI API KEY — АЛЬТЕРНАТИВА" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
-                <TextBlock Text="Этот способ подключения остаётся отдельным и не включается автоматически вместо ChatGPT." TextWrapping="Wrap" FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="0,5,0,8"/>
+                <TextBlock Text="OPENAI API KEY — ДЛЯ РАБОТЫ AI-ЧАТА" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
+                <TextBlock Text="Вход в ChatGPT подтверждает личность, но не оплачивает запросы AI-чата. API-ключ использует отдельный биллинг OpenAI." TextWrapping="Wrap" FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="0,5,0,8"/>
                 <PasswordBox x:Name="ApiKeyBox" Height="36" Padding="9" Background="#202630" Foreground="{StaticResource TextBrush}" BorderBrush="#394453" FontSize="13"/>
                 <DockPanel Margin="0,7,0,0">
                     <Button Content="Удалить сохранённый ключ" Click="DeleteApiKey_Click" DockPanel.Dock="Right" Padding="8,4" FontSize="10"/>
