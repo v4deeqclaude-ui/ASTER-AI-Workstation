@@ -42,10 +42,10 @@ jobs:
           # inference is optional and must never be required just to identify an account.
           $oauthPath = "devkit/packages/local/src/oauth.ts"
           $oauthSource = Get-Content $oauthPath -Raw
-          $oauthSource = $oauthSource.Replace('const RESOURCE = "https://api.openai.com/v1";' + "`n", '')
+          $oauthSource = [regex]::Replace($oauthSource, '(?m)^const RESOURCE = "https://api\.openai\.com/v1";\r?\n', '')
           $oauthSource = $oauthSource.Replace('const SCOPES = "openid profile email offline_access resource.invoke chatgpt.tokens.use.direct";', 'const SCOPES = "openid profile email";')
           $oauthSource = [regex]::Replace($oauthSource, '(?m)^\s*resource: RESOURCE,\r?\n', '')
-          if (-not $oauthSource.Contains('const SCOPES = "openid profile email";') -or $oauthSource.Contains('resource: RESOURCE')) {
+          if (-not $oauthSource.Contains('const SCOPES = "openid profile email";') -or $oauthSource.Contains('resource: RESOURCE') -or $oauthSource.Contains('const RESOURCE =')) {
             throw "Could not configure identity-only ChatGPT sign-in."
           }
           Set-Content -Path $oauthPath -Value $oauthSource -NoNewline
