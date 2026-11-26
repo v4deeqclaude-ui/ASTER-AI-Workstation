@@ -27,7 +27,18 @@ function emit(value) {
 function safeError(error) {
   const code = typeof error?.code === "string" ? error.code : "bridge_error";
   const message = typeof error?.message === "string" ? error.message.slice(0, 700) : "Unexpected ChatGPT connection error.";
-  return { code, message, retryable: Boolean(error?.retryable) };
+  // Expose only error classifications, never URLs, request bodies, headers, or credentials.
+  const cause = error?.cause;
+  return {
+    code,
+    message,
+    retryable: Boolean(error?.retryable),
+    diagnostics: {
+      errorType: typeof error?.name === "string" ? error.name.slice(0, 80) : "Unknown",
+      causeType: typeof cause?.name === "string" ? cause.name.slice(0, 80) : undefined,
+      causeCode: typeof cause?.code === "string" ? cause.code.slice(0, 100) : undefined
+    }
+  };
 }
 function browserUrlAllowed(value) {
   try {
