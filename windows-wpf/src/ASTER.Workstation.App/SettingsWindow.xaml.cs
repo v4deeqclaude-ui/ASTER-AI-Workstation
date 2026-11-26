@@ -135,6 +135,23 @@ public partial class SettingsWindow : Window
         }
     }
 
+    private void DeleteApiKey_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            ApiKeyBox.Clear();
+            WindowsCredentialStore.DeleteApiKey();
+            KeyStatusText.Text = "API-ключ удалён из Windows. В ASTER больше не сохранён.";
+            StatusText.Text = "Сохранённый API-ключ удалён. Вход через ChatGPT и история переписки не затронуты.";
+            AddConsoleLine("Сохранённый OpenAI API-ключ удалён из Windows Credential Manager.");
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "Не удалось удалить API-ключ: " + ex.Message;
+            AddConsoleLine("Ошибка удаления API-ключа: " + ex.Message);
+        }
+    }
+
     private void Save_Click(object sender, RoutedEventArgs e)
     {
         var key = ApiKeyBox.Password.Trim();
