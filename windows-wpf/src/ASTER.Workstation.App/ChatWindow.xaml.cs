@@ -15,7 +15,7 @@ public sealed class ChatMessageView
     public string BubbleBrush { get; init; } = "#202630";
 }
 
-public partial class ChatWindow : Window
+public partial class ChatWindow : UserControl
 {
     private readonly SqliteDatabase _database;
     private readonly ObservableCollection<ChatMessageView> _messages = new();
