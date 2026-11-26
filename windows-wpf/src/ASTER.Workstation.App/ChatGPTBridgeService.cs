@@ -86,6 +86,18 @@ public sealed class ChatGPTBridgeService
             var root = document.RootElement;
             if (root.TryGetProperty("type", out var type))
             {
+                if (type.GetString() == "diagnostic" && root.TryGetProperty("message", out var diagnosticMessage))
+                {
+                    LogDiagnostic(diagnosticMessage.GetString() ?? "Событие авторизации.");
+                    return;
+                }
+                if (type.GetString() == "session" && root.TryGetProperty("state", out var sessionState) && sessionState.ValueKind == JsonValueKind.Object)
+                {
+                    var sessionStatus = sessionState.TryGetProperty("status", out var stateStatus) ? stateStatus.GetString() : "unknown";
+                    var sharing = sessionState.TryGetProperty("sharing", out var stateSharing) && stateSharing.ValueKind == JsonValueKind.True;
+                    LogDiagnostic($"Событие SDK: статус {sessionStatus}; plan sharing: {(sharing ? "да" : "нет")}.");
+                    return;
+                }
                 if (type.GetString() == "browser.open" && root.TryGetProperty("url", out var url))
                 {
                     LogDiagnostic("Получен запрос на открытие страницы входа OpenAI.");
