@@ -54,6 +54,10 @@ public sealed class ChatGPTBridgeService
             };
             start.ArgumentList.Add(script);
             start.Environment["ASTER_DATA_DIR"] = AppPaths.Root;
+            var proxyPath = Path.Combine(AppPaths.Root, "chatgpt-proxy.txt");
+            var proxySetting = File.Exists(proxyPath) ? File.ReadAllText(proxyPath).Trim() : "http://127.0.0.1:10809";
+            start.Environment["ASTER_HTTP_PROXY"] = string.IsNullOrWhiteSpace(proxySetting) ? "http://127.0.0.1:10809" : proxySetting;
+            LogDiagnostic("Прокси для модуля авторизации: " + (proxySetting.Equals("direct", StringComparison.OrdinalIgnoreCase) ? "прямое подключение." : "HTTP-прокси настроен."));
             var process = new Process { StartInfo = start, EnableRaisingEvents = true };
             process.OutputDataReceived += (_, e) => { if (!string.IsNullOrEmpty(e.Data)) HandleLine(e.Data); };
             process.ErrorDataReceived += (_, _) => { }; // Never forward helper stderr to UI or logs.
