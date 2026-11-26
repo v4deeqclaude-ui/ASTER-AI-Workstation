@@ -24,10 +24,17 @@ let signInBusy = false;
 function emit(value) {
   process.stdout.write(JSON.stringify(value) + "\n");
 }
+function safeDiagnosticText(value) {
+  if (typeof value !== "string") return undefined;
+  return value
+    .replace(/https?:\/\/[^\s"'<>]+/gi, "[url hidden]")
+    .replace(/(authorization|bearer|access[_ -]?token|refresh[_ -]?token|client[_ -]?secret|code|state)=?\s*[^\s,;]+/gi, "$1=[redacted]")
+    .slice(0, 240);
+}
 function safeError(error) {
   const code = typeof error?.code === "string" ? error.code : "bridge_error";
-  const message = typeof error?.message === "string" ? error.message.slice(0, 700) : "Unexpected ChatGPT connection error.";
-  // Expose only error classifications, never URLs, request bodies, headers, or credentials.
+  const message = safeDiagnosticText(error?.message) || "Unexpected ChatGPT connection error.";
+  // Expose only sanitized error classifications; never URLs, request bodies, headers, or credentials.
   const cause = error?.cause;
   return {
     code,
@@ -36,7 +43,8 @@ function safeError(error) {
     diagnostics: {
       errorType: typeof error?.name === "string" ? error.name.slice(0, 80) : "Unknown",
       causeType: typeof cause?.name === "string" ? cause.name.slice(0, 80) : undefined,
-      causeCode: typeof cause?.code === "string" ? cause.code.slice(0, 100) : undefined
+      causeCode: typeof cause?.code === "string" ? cause.code.slice(0, 100) : undefined,
+      causeMessage: safeDiagnosticText(cause?.message)
     }
   };
 }
