@@ -66,11 +66,6 @@ public partial class ChatWindow : UserControl
         var sharing = chatGPTConnected && session.TryGetProperty("sharing", out var share) && share.GetBoolean();
         var apiKey = WindowsCredentialStore.ReadApiKey();
 
-        if (chatGPTConnected && !sharing)
-        {
-            StatusText.Text = "ChatGPT подключён, но plan sharing не разрешён. Проверь разрешения аккаунта в ChatGPT.";
-            return;
-        }
         if (!sharing && string.IsNullOrWhiteSpace(apiKey))
         {
             StatusText.Text = "Подключи ChatGPT в настройках или отдельно добавь OpenAI API-ключ.";
