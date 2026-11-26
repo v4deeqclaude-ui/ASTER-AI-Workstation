@@ -37,7 +37,8 @@ public partial class ChatWindow : UserControl
         command.CommandText = "SELECT Role, Content FROM AiMessages ORDER BY Id;";
         await using var reader = await command.ExecuteReaderAsync();
         var loadedCount = 0;
-        while (await reader.ReadAsync()) { AddMessage(reader.GetString(0), reader.GetString(1)); loadedCount++; }\n        WorkspaceActivityLog.Write("CHAT", $"Загружена история AI-чата: {loadedCount} сообщений.");
+        while (await reader.ReadAsync()) { AddMessage(reader.GetString(0), reader.GetString(1)); loadedCount++; }
+        WorkspaceActivityLog.Write("CHAT", $"Загружена история AI-чата: {loadedCount} сообщений.");
         ScrollToEnd();
     }
 
