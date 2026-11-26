@@ -66,25 +66,41 @@ jobs:
 
       - name: Package ChatGPT bridge and Node runtime
         shell: pwsh
+        timeout-minutes: 15
         run: |
+          $source = "windows-wpf/aster-chatgpt-bridge"
           $destination = "windows-wpf/artifacts/publish/ChatGPTBridge"
           New-Item -ItemType Directory -Force $destination | Out-Null
-          Copy-Item "windows-wpf/aster-chatgpt-bridge/bridge.mjs" "$destination/bridge.mjs"
-          $sourceModules = "windows-wpf/aster-chatgpt-bridge/node_modules"
-          $targetModules = "$destination/node_modules"
-          if (-not (Test-Path "$sourceModules/@siwc/local")) { throw "Installed @siwc/local dependency is missing." }
-          if (-not (Test-Path "$sourceModules/@primno/dpapi")) { throw "Installed @primno/dpapi dependency is missing." }
-          # Copy-Item -Recurse can be extremely slow on Windows runners for deep npm trees.
-          # Robocopy uses multiple threads and returns 0-7 for success/non-fatal differences.
-          robocopy $sourceModules $targetModules /E /MT:16 /R:2 /W:2 /NFL /NDL /NJH /NJS /NP
-          if ($LASTEXITCODE -ge 8) { throw "Robocopy failed with exit code $LASTEXITCODE." }
-          $LASTEXITCODE = 0
+
+          # Install dependencies directly in the final app folder.
+          # This avoids copying tens of thousands of files from node_modules.
+          Copy-Item "$source/bridge.mjs" "$destination/bridge.mjs"
+          Copy-Item "$source/package.json" "$destination/package.json"
+          Copy-Item "$source/OPENAI-DEVKIT-LICENSE" "$destination/OPENAI-DEVKIT-LICENSE"
+          Copy-Item "$source/THIRD_PARTY_NOTICES.md" "$destination/THIRD_PARTY_NOTICES.md"
+          New-Item -ItemType Directory -Force "$destination/vendor/siwc-local" | Out-Null
+          Copy-Item "$source/vendor/siwc-local/package.json" "$destination/vendor/siwc-local/package.json"
+          Copy-Item "$source/vendor/siwc-local/LICENSE" "$destination/vendor/siwc-local/LICENSE"
+          Copy-Item "$source/vendor/siwc-local/dist" "$destination/vendor/siwc-local/dist" -Recurse
+
+          Push-Location $destination
+          try {
+            npm install --omit=dev --no-audit --no-fund --prefer-offline --no-progress
+            if ($LASTEXITCODE -ne 0) { throw "npm install failed with exit code $LASTEXITCODE." }
+            node --input-type=module -e "await import('@siwc/local'); await import('@primno/dpapi'); console.log('Bridge dependencies verified.')"
+            if ($LASTEXITCODE -ne 0) { throw "Bridge dependency verification failed with exit code $LASTEXITCODE." }
+          }
+          finally {
+            Pop-Location
+          }
+
           $nodeExe = (Get-Command node).Source
           Copy-Item $nodeExe "$destination/node.exe"
-          Copy-Item "windows-wpf/aster-chatgpt-bridge/OPENAI-DEVKIT-LICENSE" "$destination/OPENAI-DEVKIT-LICENSE"
-          Copy-Item "windows-wpf/aster-chatgpt-bridge/THIRD_PARTY_NOTICES.md" "$destination/THIRD_PARTY_NOTICES.md"
           if (-not (Test-Path "$destination/node.exe")) { throw "Bundled Node.js runtime is missing." }
-
+          if (-not (Test-Path "$destination/node_modules/@siwc/local")) { throw "Installed @siwc/local dependency is missing." }
+          if (-not (Test-Path "$destination/node_modules/@primno/dpapi")) { throw "Installed @primno/dpapi dependency is missing." }
+          Write-Host "ChatGPT bridge packaging completed and dependencies verified."
+          
       - name: Upload Windows application
         uses: actions/upload-artifact@v4
         with:
