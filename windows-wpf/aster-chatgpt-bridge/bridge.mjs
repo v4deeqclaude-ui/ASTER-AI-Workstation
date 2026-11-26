@@ -24,6 +24,38 @@ let signInBusy = false;
 function emit(value) {
   process.stdout.write(JSON.stringify(value) + "\n");
 }
+// Observe only OAuth/API transport metadata. Never log query strings, bodies, headers, cookies, or tokens.
+const nativeFetch = globalThis.fetch.bind(globalThis);
+globalThis.fetch = async (input, init) => {
+  let target;
+  try {
+    target = new URL(typeof input === "string" ? input : input.url);
+  } catch {
+    return nativeFetch(input, init);
+  }
+  const monitoredHost = ["auth.openai.com", "api.openai.com"].includes(target.hostname);
+  if (!monitoredHost) return nativeFetch(input, init);
+  const method = String(init?.method || (typeof Request !== "undefined" && input instanceof Request ? input.method : "GET")).toUpperCase();
+  const endpoint = target.hostname + target.pathname;
+  emit({ type: "diagnostic", message: `Сетевой запрос OAuth: ${method} ${endpoint}.` });
+  try {
+    const response = await nativeFetch(input, init);
+    let oauthError = "";
+    if (!response.ok && /token/i.test(target.pathname)) {
+      try {
+        const body = await response.clone().json();
+        if (typeof body?.error === "string" && /^[a-z0-9_.-]{1,64}$/i.test(body.error)) oauthError = `; OAuth-код: ${body.error}`;
+      } catch { /* Response body is intentionally not logged. */ }
+    }
+    emit({ type: "diagnostic", message: `Ответ OAuth: HTTP ${response.status} от ${target.hostname}${oauthError}.` });
+    return response;
+  } catch (error) {
+    const causeCode = typeof error?.cause?.code === "string" ? error.cause.code : "";
+    emit({ type: "diagnostic", message: `Сетевой запрос OAuth не выполнен: ${error?.name || "Error"}${causeCode ? " · " + causeCode : ""}.` });
+    throw error;
+  }
+};
+
 function safeDiagnosticText(value) {
   if (typeof value !== "string") return undefined;
   return value
