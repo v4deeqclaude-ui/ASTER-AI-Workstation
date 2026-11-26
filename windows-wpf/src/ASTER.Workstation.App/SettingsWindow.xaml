@@ -38,7 +38,10 @@
                 <TextBlock Text="OPENAI API KEY — АЛЬТЕРНАТИВА" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
                 <TextBlock Text="Этот способ подключения остаётся отдельным и не включается автоматически вместо ChatGPT." TextWrapping="Wrap" FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="0,5,0,8"/>
                 <PasswordBox x:Name="ApiKeyBox" Height="36" Padding="9" Background="#202630" Foreground="{StaticResource TextBrush}" BorderBrush="#394453" FontSize="13"/>
-                <TextBlock x:Name="KeyStatusText" Text="Ключ не сохранён." FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="0,7,0,0"/>
+                <DockPanel Margin="0,7,0,0">
+                    <Button Content="Удалить сохранённый ключ" Click="DeleteApiKey_Click" DockPanel.Dock="Right" Padding="8,4" FontSize="10"/>
+                    <TextBlock x:Name="KeyStatusText" Text="Ключ не сохранён." FontSize="10" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center"/>
+                </DockPanel>
             </StackPanel>
         </Border>
         <Border Grid.Row="4" Background="#111820" BorderBrush="#394453" BorderThickness="1" CornerRadius="8" Padding="10" Margin="0,12,0,10">
