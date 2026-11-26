@@ -32,6 +32,9 @@ internal static class WindowsCredentialStore
     [DllImport("advapi32.dll", EntryPoint = "CredReadW", CharSet = CharSet.Unicode, SetLastError = true)]
     private static extern bool CredRead(string target, uint type, uint flags, out IntPtr credential);
 
+    [DllImport("advapi32.dll", EntryPoint = "CredDeleteW", CharSet = CharSet.Unicode, SetLastError = true)]
+    private static extern bool CredDelete(string target, uint type, uint flags);
+
     [DllImport("advapi32.dll", SetLastError = true)]
     private static extern void CredFree(IntPtr buffer);
 
@@ -57,6 +60,16 @@ internal static class WindowsCredentialStore
         finally
         {
             Marshal.ZeroFreeGlobalAllocUnicode(blob);
+        }
+    }
+
+    public static void DeleteApiKey()
+    {
+        if (!CredDelete(TargetName, CredentialTypeGeneric, 0))
+        {
+            var error = Marshal.GetLastWin32Error();
+            // ERROR_NOT_FOUND: key is already absent.
+            if (error != 1168) throw new Win32Exception(error, "Не удалось удалить ключ из Windows Credential Manager.");
         }
     }
 
