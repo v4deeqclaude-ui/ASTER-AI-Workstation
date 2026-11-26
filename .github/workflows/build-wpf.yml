@@ -70,7 +70,15 @@ jobs:
           $destination = "windows-wpf/artifacts/publish/ChatGPTBridge"
           New-Item -ItemType Directory -Force $destination | Out-Null
           Copy-Item "windows-wpf/aster-chatgpt-bridge/bridge.mjs" "$destination/bridge.mjs"
-          Copy-Item "windows-wpf/aster-chatgpt-bridge/node_modules" "$destination/node_modules" -Recurse
+          $sourceModules = "windows-wpf/aster-chatgpt-bridge/node_modules"
+          $targetModules = "$destination/node_modules"
+          if (-not (Test-Path "$sourceModules/@siwc/local")) { throw "Installed @siwc/local dependency is missing." }
+          if (-not (Test-Path "$sourceModules/@primno/dpapi")) { throw "Installed @primno/dpapi dependency is missing." }
+          # Copy-Item -Recurse can be extremely slow on Windows runners for deep npm trees.
+          # Robocopy uses multiple threads and returns 0-7 for success/non-fatal differences.
+          robocopy $sourceModules $targetModules /E /MT:16 /R:2 /W:2 /NFL /NDL /NJH /NJS /NP
+          if ($LASTEXITCODE -ge 8) { throw "Robocopy failed with exit code $LASTEXITCODE." }
+          $LASTEXITCODE = 0
           $nodeExe = (Get-Command node).Source
           Copy-Item $nodeExe "$destination/node.exe"
           Copy-Item "windows-wpf/aster-chatgpt-bridge/OPENAI-DEVKIT-LICENSE" "$destination/OPENAI-DEVKIT-LICENSE"
