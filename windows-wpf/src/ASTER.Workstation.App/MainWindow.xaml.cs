@@ -232,7 +232,8 @@ public partial class MainWindow : Window
     {
         PageTitle.Text = "Приложения";
         PageSubtitle.Text = "Unity, Blender и другие инструменты будут подключаться через адаптеры.";
-        WorkspaceActivityLog.Write("NAVIGATION", "Открыт раздел «Приложения».");\n        MessageBox.Show(this, "Подключение Unity, Blender и других программ запланировано на следующие этапы.\n\nВ версии 0.1 этот раздел является информационным.",
+        WorkspaceActivityLog.Write("NAVIGATION", "Открыт раздел «Приложения».");
+        MessageBox.Show(this, "Подключение Unity, Blender и других программ запланировано на следующие этапы.\n\nВ версии 0.1 этот раздел является информационным.",
             "ASTER — приложения", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
@@ -240,7 +241,8 @@ public partial class MainWindow : Window
     {
         PageTitle.Text = "История";
         PageSubtitle.Text = "История задач и изменений появится после подключения AI-модуля.";
-        WorkspaceActivityLog.Write("NAVIGATION", "Открыт раздел «История».");\n        MessageBox.Show(this, "История AI-задач будет добавлена на следующем этапе. В версии 0.1 сохраняется список проектов и время последнего открытия.",
+        WorkspaceActivityLog.Write("NAVIGATION", "Открыт раздел «История».");
+        MessageBox.Show(this, "История AI-задач будет добавлена на следующем этапе. В версии 0.1 сохраняется список проектов и время последнего открытия.",
             "ASTER — история", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
@@ -264,7 +266,8 @@ public partial class MainWindow : Window
     {
         PageTitle.Text = "Настройки";
         PageSubtitle.Text = "Параметры подключения AI-провайдера."; 
-        WorkspaceActivityLog.Write("NAVIGATION", "Открыты настройки приложения.");\n        var window = new SettingsWindow { Owner = this };
+        WorkspaceActivityLog.Write("NAVIGATION", "Открыты настройки приложения.");
+        var window = new SettingsWindow { Owner = this };
         window.ShowDialog();
     }
 
