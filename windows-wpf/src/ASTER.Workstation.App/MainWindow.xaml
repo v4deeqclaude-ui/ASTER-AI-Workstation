@@ -21,6 +21,7 @@
                     <Button Content="◇   Приложения" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Applications_Click" />
                     <Button Content="◷   История" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="History_Click" />
                     <Button Content="✦   AI-ассистент" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Chat_Click" />
+                    <Button Content="⌨   Командная строка" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Terminal_Click" />
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Bottom">
                     <Border Height="1" Background="#2A313B" Margin="0,0,0,13" />
