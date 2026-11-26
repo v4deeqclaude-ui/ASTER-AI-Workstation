@@ -12,9 +12,12 @@ public partial class TerminalWindow : Window
     {
         InitializeComponent();
         WorkspaceActivityLog.EntryAdded += OnActivity;
-        OutputBox.AppendText("ASTER WORKSPACE TERMINAL\\r\\n");
-        OutputBox.AppendText("Системные события и команды ASTER будут отображаться здесь.\\r\\n");
-        OutputBox.AppendText("Ввод команд выполняется через cmd.exe от имени текущего пользователя.\\r\\n\\r\\n");
+        OutputBox.AppendText("ASTER WORKSPACE TERMINAL" + Environment.NewLine);
+        OutputBox.AppendText("Журнал действий ASTER · текущая сессия" + Environment.NewLine);
+        OutputBox.AppendText("Команды выполняются через cmd.exe от имени текущего пользователя." + Environment.NewLine + Environment.NewLine);
+        foreach (var entry in WorkspaceActivityLog.GetRecentEntries())
+            OutputBox.AppendText(entry + Environment.NewLine);
+        OutputBox.ScrollToEnd();
         Closed += (_, _) => WorkspaceActivityLog.EntryAdded -= OnActivity;
     }
 
@@ -109,5 +112,5 @@ public partial class TerminalWindow : Window
         catch (Exception ex) { AppendOutput("[Ошибка остановки] " + ex.Message, true); }
     }
 
-    private void Clear_Click(object sender, RoutedEventArgs e) => OutputBox.Clear();
+    private void Clear_Click(object sender, RoutedEventArgs e)\n    {\n        OutputBox.Clear();\n        OutputBox.AppendText("Экран очищен. Новые события продолжат отображаться." + Environment.NewLine);\n    }
 }
