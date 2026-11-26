@@ -201,6 +201,9 @@ public partial class MainWindow : Window
 
     private void Home_Click(object sender, RoutedEventArgs e)
     {
+        EmbeddedPage.Content = null;
+        EmbeddedPage.Visibility = Visibility.Collapsed;
+        HomePage.Visibility = Visibility.Visible;
         PageTitle.Text = "Главная";
         PageSubtitle.Text = "Твоя рабочая среда для создания игр.";
         SetStatus("Главная рабочая область ASTER.");
@@ -231,10 +234,10 @@ public partial class MainWindow : Window
 
     private void Chat_Click(object sender, RoutedEventArgs e)
     {
-        PageTitle.Text = "AI-ассистент";
-        PageSubtitle.Text = "Диалог с ИИ и локальная история сообщений.";
-        var window = new ChatWindow(_database) { Owner = this };
-        window.ShowDialog();
+        HomePage.Visibility = Visibility.Collapsed;
+        EmbeddedPage.Content = new ChatWindow(_database);
+        EmbeddedPage.Visibility = Visibility.Visible;
+        SetStatus("AI-ассистент открыт внутри ASTER. Остальные разделы остаются доступны.");
     }
 
     private void Terminal_Click(object sender, RoutedEventArgs e)
