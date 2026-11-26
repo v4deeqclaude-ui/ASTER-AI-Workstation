@@ -16,7 +16,6 @@ public sealed class ChatGPTBridgeService
     private Process? _process;
     private StreamWriter? _input;
     private readonly SemaphoreSlim _writeLock = new(1, 1);
-    private string? _startupError;
 
     private ChatGPTBridgeService() { }
 
