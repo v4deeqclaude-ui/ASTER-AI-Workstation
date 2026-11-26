@@ -41,8 +41,8 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
-                <DockPanel Margin="0,0,0,8">
-                    <TextBlock Text="КОНСОЛЬ ДИАГНОСТИКИ" Foreground="{StaticResource AccentBrush}" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                <DockPanel Margin="0,0,0,8" LastChildFill="False">
+                    <TextBlock DockPanel.Dock="Left" Text="КОНСОЛЬ ДИАГНОСТИКИ" Foreground="{StaticResource AccentBrush}" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     <Button Content="Очистить" Click="ClearConsole_Click" DockPanel.Dock="Right" Padding="8,3" FontSize="10"/>
                 </DockPanel>
                 <TextBox x:Name="DiagnosticConsole" Grid.Row="1" IsReadOnly="True" AcceptsReturn="True"
