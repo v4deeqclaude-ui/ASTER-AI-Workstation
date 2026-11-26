@@ -9,7 +9,8 @@ public partial class SettingsWindow : Window
 {
     public SettingsWindow()
     {
-        InitializeComponent();\n        WorkspaceActivityLog.Write("SETTINGS", "Открыты настройки приложения.");
+        InitializeComponent();
+        WorkspaceActivityLog.Write("SETTINGS", "Открыты настройки приложения.");
         var proxyPath = Path.Combine(AppPaths.Root, "chatgpt-proxy.txt");
         ProxyBox.Text = File.Exists(proxyPath) ? File.ReadAllText(proxyPath).Trim() : "http://127.0.0.1:10809";
         ChatGPTBridgeService.Shared.DiagnosticReceived += OnDiagnosticReceived;
@@ -105,7 +106,8 @@ public partial class SettingsWindow : Window
         DisconnectButton.IsEnabled = false;
         try
         {
-            await ChatGPTBridgeService.Shared.DisconnectAsync();\n            WorkspaceActivityLog.Write("CHATGPT", "Пользователь отключил аккаунт ChatGPT.");
+            await ChatGPTBridgeService.Shared.DisconnectAsync();
+            WorkspaceActivityLog.Write("CHATGPT", "Пользователь отключил аккаунт ChatGPT.");
             ChatGPTStatusText.Text = "Аккаунт ChatGPT отключён.";
         }
         catch (Exception ex) { StatusText.Text = ex.Message; }
@@ -124,7 +126,8 @@ public partial class SettingsWindow : Window
         try
         {
             Directory.CreateDirectory(AppPaths.Root);
-            File.WriteAllText(Path.Combine(AppPaths.Root, "chatgpt-proxy.txt"), value);\n            WorkspaceActivityLog.Write("SETTINGS", "Сохранена настройка сетевого подключения (значение не выводится в журнал).");
+            File.WriteAllText(Path.Combine(AppPaths.Root, "chatgpt-proxy.txt"), value);
+            WorkspaceActivityLog.Write("SETTINGS", "Сохранена настройка сетевого подключения (значение не выводится в журнал).");
             StatusText.Text = "Настройка прокси сохранена. Полностью закрой и заново запусти ASTER, чтобы применить её.";
             AddConsoleLine("Настройка прокси сохранена; для применения нужен перезапуск ASTER.");
         }
@@ -140,7 +143,8 @@ public partial class SettingsWindow : Window
         try
         {
             ApiKeyBox.Clear();
-            WindowsCredentialStore.DeleteApiKey();\n            WorkspaceActivityLog.Write("SECURITY", "Сохранённый OpenAI API-ключ удалён из Windows Credential Manager.");
+            WindowsCredentialStore.DeleteApiKey();
+            WorkspaceActivityLog.Write("SECURITY", "Сохранённый OpenAI API-ключ удалён из Windows Credential Manager.");
             KeyStatusText.Text = "API-ключ удалён из Windows. В ASTER больше не сохранён.";
             StatusText.Text = "Сохранённый API-ключ удалён. Вход через ChatGPT и история переписки не затронуты.";
             AddConsoleLine("Сохранённый OpenAI API-ключ удалён из Windows Credential Manager.");
@@ -162,7 +166,8 @@ public partial class SettingsWindow : Window
         }
         try
         {
-            WindowsCredentialStore.SaveApiKey(key);\n            WorkspaceActivityLog.Write("SECURITY", "OpenAI API-ключ сохранён в Windows Credential Manager. Значение ключа не журналируется.");
+            WindowsCredentialStore.SaveApiKey(key);
+            WorkspaceActivityLog.Write("SECURITY", "OpenAI API-ключ сохранён в Windows Credential Manager. Значение ключа не журналируется.");
             ApiKeyBox.Clear();
             KeyStatusText.Text = "API-ключ сохранён в Windows.";
             StatusText.Text = "API-ключ сохранён отдельно от входа через ChatGPT.";
