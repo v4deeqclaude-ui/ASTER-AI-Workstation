@@ -4,10 +4,20 @@ import { mkdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
 import readline from "node:readline";
+import { ProxyAgent, setGlobalDispatcher } from "undici";
 
 const APP_ID = "aster-ai-workstation";
 const dataRoot = process.env.ASTER_DATA_DIR || join(homedir(), "AppData", "Local", "ASTER", "Workstation");
 const storageDir = join(dataRoot, "ChatGPT");
+// ASTER uses Hiro/Xray local HTTP proxy by default; set ASTER_HTTP_PROXY=direct to opt out.
+const proxySetting = process.env.ASTER_HTTP_PROXY ?? "http://127.0.0.1:10809";
+if (proxySetting.toLowerCase() !== "direct") {
+  const proxyUrl = new URL(proxySetting);
+  if (proxyUrl.protocol !== "http:" || !proxyUrl.hostname || !proxyUrl.port) {
+    throw new Error("ASTER_HTTP_PROXY must be an HTTP proxy URL or the value direct.");
+  }
+  setGlobalDispatcher(new ProxyAgent(proxyUrl.toString()));
+}
 let client;
 let signInBusy = false;
 
