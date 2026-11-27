@@ -8,6 +8,7 @@ on:
       - feature/aster-chatgpt-plan-auth
       - fix/aster-oauth-diagnostics-2026-11
       - feature/aster-neon-future-ui
+      - feature/aster-v04-deep-space
     paths:
       - 'windows-wpf/**'
       - '.github/workflows/build-wpf.yml'
@@ -49,7 +50,7 @@ jobs:
       - name: Upload Windows application
         uses: actions/upload-artifact@v4
         with:
-          name: ASTER-AI-Workstation-0.3-ollama-win-x64
+          name: ASTER-AI-Workstation-0.4-deep-space-win-x64
           path: windows-wpf/artifacts/publish/
           if-no-files-found: error
           retention-days: 14
