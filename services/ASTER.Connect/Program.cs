@@ -120,7 +120,22 @@ app.MapPost("/api/github/pairings/{id}/status", async (string id, IPairingStore 
     var stored = Convert.FromHexString(record.VerifierHash);
     if (!CryptographicOperations.FixedTimeEquals(supplied, stored))
         return Results.Problem(title: "Pairing proof rejected", statusCode: 401);
+    if (string.Equals(record.Status, "installed", StringComparison.Ordinal))
+    {
+        var completionCode = await store.TryIssueCompletionCodeAsync(id, DateTimeOffset.UtcNow, ct);
+        if (completionCode is null)
+            return Results.Problem(title: "Could not issue pairing completion code", statusCode: 409);
+        return Results.Ok(new { pairingId = record.Id, status = "completion_ready", completionCode, expiresAtUtc = record.ExpiresAtUtc });
+    }
     return Results.Ok(new { pairingId = record.Id, status = record.Status, expiresAtUtc = record.ExpiresAtUtc });
+});
+
+app.MapPost("/api/github/pairings/{id}/complete", async (string id, IPairingStore store, PairingCompleteRequest request, CancellationToken ct) =>
+{
+    var installationId = await store.TryRedeemCompletionCodeAsync(id, request.CompletionCode, DateTimeOffset.UtcNow, ct);
+    if (installationId is null)
+        return Results.Problem(title: "Pairing completion code is invalid, expired, or already used", statusCode: 410);
+    return Results.Ok(new { pairingId = id, status = "redeemed", installationId });
 });
 
 app.MapGet("/api/github/callback", async (HttpContext http, string? installation_id, string? setup_action, string? state) =>
@@ -188,3 +203,4 @@ app.Run();
 
 public sealed record PairingStartRequest(string Verifier);
 public sealed record PairingStatusRequest(string Verifier);
+public sealed record PairingCompleteRequest(string CompletionCode);
