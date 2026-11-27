@@ -96,6 +96,12 @@ public sealed class MyApplicationsControl : UserControl
         catch { return new(); }
     }
 
+    private bool ShowOwnedDialog(Window dialog)
+    {
+        dialog.Owner = Window.GetWindow(this);
+        return dialog.ShowDialog() == true;
+    }
+
     private void AddApplication()
     {
         var dialog = new OpenFileDialog
