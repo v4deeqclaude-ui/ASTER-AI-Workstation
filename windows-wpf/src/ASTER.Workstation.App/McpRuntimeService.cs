@@ -228,7 +228,18 @@ internal static class McpRuntimeService
             {
                 var separator = line.IndexOf('=');
                 if (separator > 0)
-                    start.Environment[line[..separator].Trim()] = line[(separator + 1)..].Trim();
+                {
+                    var variableName = line[..separator].Trim();
+                    var variableValue = line[(separator + 1)..].Trim();
+                    const string credentialPrefix = "@ASTER_CREDENTIAL:";
+                    if (variableValue.StartsWith(credentialPrefix, StringComparison.Ordinal))
+                    {
+                        var target = variableValue[credentialPrefix.Length..];
+                        if (!McpSecretStore.TryRead(target, out variableValue))
+                            throw new InvalidOperationException($"Не найден секрет Windows Credential Manager для переменной {variableName}. Открой настройки MCP и сохрани секрет повторно.");
+                    }
+                    start.Environment[variableName] = variableValue;
+                }
             }
 
             var process = new Process { StartInfo = start };
