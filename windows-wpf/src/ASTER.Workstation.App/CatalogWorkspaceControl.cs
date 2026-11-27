@@ -434,11 +434,35 @@ public sealed class CatalogWorkspaceControl : UserControl
         body.Children.Add(new TextBlock { Text = server.Enabled ? "КОНФИГУРАЦИЯ СОХРАНЕНА · НЕ ПОДКЛЮЧЁН" : "ОТКЛЮЧЁН", Foreground = Brush("#E6C47A"), FontSize = 9, Margin = new Thickness(0, 4, 0, 0) });
         body.Children.Add(new TextBlock { Text = server.Command + " " + server.Arguments, Foreground = Brush("#91A7B5"), FontSize = 10, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 5, 0, 0) });
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 8, 0, 0) };
+        var test = SecondaryButton("Проверить");
+        test.Click += async (_, _) =>
+        {
+            test.IsEnabled = false;
+            test.Content = "Проверка…";
+            try
+            {
+                var tools = await McpRuntimeService.ListToolsAsync(server);
+                var names = tools.Count == 0 ? "Сервер ответил, но не предоставил инструменты." :
+                    string.Join("\n", tools.Select(x => "• " + (x["name"]?.GetValue<string>() ?? "Без названия")));
+                MessageBox.Show(Window.GetWindow(this), $"MCP-сервер «{server.Name}» ответил.\n\nИнструменты:\n{names}", "Проверка MCP", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(Window.GetWindow(this), "Не удалось подключиться к MCP-серверу.\n\n" + ex.Message, "Ошибка MCP", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+            finally
+            {
+                test.IsEnabled = true;
+                test.Content = "Проверить";
+            }
+        };
         var edit = SecondaryButton("Изменить");
         edit.Click += (_, _) => AddMcpServer(new MarketplaceItem(server.Name, "MCP", "Редактирование конфигурации", server.Command, server.Arguments, server.Name));
         var remove = SecondaryButton("Удалить");
         remove.Margin = new Thickness(7, 0, 0, 0);
         remove.Click += (_, _) => { var list = ReadMcpServers(); list.RemoveAll(x => x.Name == server.Name); WriteMcpServers(list); RefreshPluginView(); };
+        buttons.Children.Add(test);
+        test.Margin = new Thickness(0, 0, 7, 0);
         buttons.Children.Add(edit);
         buttons.Children.Add(remove);
         body.Children.Add(buttons);
