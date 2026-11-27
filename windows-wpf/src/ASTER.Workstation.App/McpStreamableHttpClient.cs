@@ -18,6 +18,7 @@ internal sealed class McpStreamableHttpClient : IAsyncDisposable
     private readonly HttpClient _http;
     private readonly Uri _endpoint;
     private string? _sessionId;
+    private string _negotiatedProtocolVersion = ProtocolVersion;
     private int _nextId;
     private bool _initialized;
 
@@ -53,6 +54,7 @@ internal sealed class McpStreamableHttpClient : IAsyncDisposable
         var negotiated = result["protocolVersion"]?.GetValue<string>();
         if (string.IsNullOrWhiteSpace(negotiated))
             throw new InvalidOperationException("MCP-сервер не вернул согласованную версию протокола.");
+        _negotiatedProtocolVersion = negotiated;
 
         await SendNotificationAsync("notifications/initialized", new JsonObject(), cancellationToken);
         _initialized = true;
@@ -173,7 +175,7 @@ internal sealed class McpStreamableHttpClient : IAsyncDisposable
         var request = new HttpRequestMessage(HttpMethod.Post, _endpoint);
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
-        request.Headers.TryAddWithoutValidation("MCP-Protocol-Version", ProtocolVersion);
+        request.Headers.TryAddWithoutValidation("MCP-Protocol-Version", _negotiatedProtocolVersion);
         if (includeSession && !string.IsNullOrWhiteSpace(_sessionId))
             request.Headers.TryAddWithoutValidation("Mcp-Session-Id", _sessionId);
         request.Content = new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json");
