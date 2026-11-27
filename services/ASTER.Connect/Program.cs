@@ -116,7 +116,7 @@ app.MapPost("/api/github/pairings/{id}/status", async (string id, IPairingStore 
     var record = await store.GetAsync(id, ct);
     if (record is null || record.ExpiresAtUtc <= DateTimeOffset.UtcNow)
         return Results.NotFound(new { status = "expired_or_unknown" });
-    var supplied = SHA256.HashData(Convert.FromHexString(verifier));
+    var supplied = SHA256.HashData(Convert.FromHexString(request.Verifier));
     var stored = Convert.FromHexString(record.VerifierHash);
     if (!CryptographicOperations.FixedTimeEquals(supplied, stored))
         return Results.Problem(title: "Pairing proof rejected", statusCode: 401);
