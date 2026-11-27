@@ -194,7 +194,7 @@ public sealed class CatalogWorkspaceControl : UserControl
             BorderBrush = Brush("#29495D"), PlacementTarget = target
         };
         menu.Items.Add(MenuItem("Открыть Marketplace", () => { _activePluginTab = "marketplace"; RefreshPluginView(); }));
-        menu.Items.Add(MenuItem("Добавить MCP-сервер", AddMcpServer));
+        menu.Items.Add(MenuItem("Добавить MCP-сервер", () => AddMcpServer()));
         menu.Items.Add(MenuItem("Добавить программу (.exe)", AddDesktopApp));
         menu.IsOpen = true;
     }
