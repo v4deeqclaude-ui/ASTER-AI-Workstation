@@ -12,7 +12,8 @@ if (!string.IsNullOrWhiteSpace(keyRingPath))
 
 var app = builder.Build();
 var stateProtector = app.Services.GetRequiredService<IDataProtectionProvider>()
-    .CreateProtector("ASTER.Connect.GitHub.InstallationState.v1");
+    .CreateProtector("ASTER.Connect.GitHub.InstallationState.v1")
+    .ToTimeLimitedDataProtector();
 
 app.MapGet("/", () => Results.Ok(new
 {
@@ -90,7 +91,7 @@ app.MapGet("/api/github/connect", (HttpContext http, IConfiguration configuratio
             statusCode: StatusCodes.Status503ServiceUnavailable);
 
     var state = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
-    var protectedState = stateProtector.Protect(state);
+    var protectedState = stateProtector.Protect(state, TimeSpan.FromMinutes(10));
     http.Response.Cookies.Append("aster_github_install_state", protectedState, new CookieOptions
     {
         HttpOnly = true,
@@ -120,7 +121,7 @@ app.MapGet("/api/github/callback", (HttpContext http, string? installation_id, s
     string expectedState;
     try
     {
-        expectedState = stateProtector.Unprotect(protectedCookie);
+        expectedState = stateProtector.Unprotect(protectedCookie, out _);
     }
     catch (CryptographicException)
     {
