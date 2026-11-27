@@ -11,6 +11,7 @@ on:
       - feature/aster-v04-deep-space
       - feature/aster-v05-plugin-marketplace
       - feature/aster-v06-mcp-transports
+      - feature/aster-v07-github-app-connect
     paths:
       - 'windows-wpf/**'
       - '.github/workflows/build-wpf.yml'
@@ -21,6 +22,7 @@ on:
       - feature/aster-v04-deep-space
       - feature/aster-v05-plugin-marketplace
       - feature/aster-v06-mcp-transports
+      - feature/aster-v07-github-app-connect
   workflow_dispatch:
 
 permissions:
@@ -32,18 +34,14 @@ jobs:
     steps:
       - name: Checkout ASTER
         uses: actions/checkout@v4
-
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-
       - name: Restore WPF dependencies
         run: dotnet restore windows-wpf/ASTER.Workstation.sln
-
       - name: Publish Windows x64 application
         run: dotnet publish windows-wpf/src/ASTER.Workstation.App/ASTER.Workstation.App.csproj --configuration Release --runtime win-x64 --self-contained true --output windows-wpf/artifacts/publish
-
       - name: Verify Ollama client is included
         shell: pwsh
         run: |
@@ -52,7 +50,6 @@ jobs:
             throw "ASTER executable was not produced."
           }
           Write-Host "ASTER Ollama-only application published."
-
       - name: Upload Windows application
         uses: actions/upload-artifact@v4
         with:
