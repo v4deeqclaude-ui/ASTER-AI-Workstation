@@ -115,17 +115,17 @@ public partial class ChatWindow : UserControl
                     try
                     {
                         var content = await File.ReadAllTextAsync(path);
-                        if (content.Length > 20000) content = content[..20000] + "\\n[Файл сокращён до 20 000 символов]";
-                        promptText += "\\n\\n[Содержимое файла: " + Path.GetFileName(path) + "]\\n" + content;
+                        if (content.Length > 20000) content = content[..20000] + "\n[Файл сокращён до 20 000 символов]";
+                        promptText += "\n\n[Содержимое файла: " + Path.GetFileName(path) + "]\n" + content;
                     }
-                    catch (Exception ex) { promptText += "\\n[Не удалось прочитать " + Path.GetFileName(path) + ": " + ex.Message + "]"; }
+                    catch (Exception ex) { promptText += "\n[Не удалось прочитать " + Path.GetFileName(path) + ": " + ex.Message + "]"; }
                 }
-                else promptText += "\\n[Прикреплён файл " + Path.GetFileName(path) + ". Текущая локальная модель не умеет анализировать этот тип вложения напрямую.]";
+                else promptText += "\n[Прикреплён файл " + Path.GetFileName(path) + ". Текущая локальная модель не умеет анализировать этот тип вложения напрямую.]";
             }
             else if (Directory.Exists(path))
             {
                 var files = Directory.GetFiles(path, "*", SearchOption.TopDirectoryOnly).Take(40);
-                promptText += "\\n[Папка " + path + ". Файлы верхнего уровня: " + string.Join(", ", files.Select(Path.GetFileName)) + "]";
+                promptText += "\n[Папка " + path + ". Файлы верхнего уровня: " + string.Join(", ", files.Select(Path.GetFileName)) + "]";
             }
         }
 
