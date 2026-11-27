@@ -17,6 +17,7 @@ public interface IPairingStore
 {
     Task<PairingRecord?> GetAsync(string id, CancellationToken cancellationToken = default);
     Task SaveAsync(PairingRecord record, CancellationToken cancellationToken = default);
+    Task<bool> TryMarkInstalledAsync(string id, long installationId, DateTimeOffset nowUtc, CancellationToken cancellationToken = default);
     Task<bool> RemoveAsync(string id, CancellationToken cancellationToken = default);
 }
 
@@ -67,6 +68,29 @@ public sealed class EncryptedFilePairingStore : IPairingStore
             var records = await ReadAllAsync(cancellationToken);
             records[record.Id] = record;
             await WriteAllAsync(records, cancellationToken);
+        }
+        finally { _gate.Release(); }
+    }
+
+    public async Task<bool> TryMarkInstalledAsync(string id, long installationId, DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return false;
+        if (installationId <= 0)
+            throw new ArgumentOutOfRangeException(nameof(installationId));
+
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var records = await ReadAllAsync(cancellationToken);
+            if (!records.TryGetValue(id, out var record) ||
+                record.ExpiresAtUtc <= nowUtc ||
+                !string.Equals(record.Status, "pending", StringComparison.Ordinal))
+                return false;
+
+            records[id] = record with { Status = "installed", InstallationId = installationId };
+            await WriteAllAsync(records, cancellationToken);
+            return true;
         }
         finally { _gate.Release(); }
     }
