@@ -38,6 +38,7 @@ public sealed class CatalogWorkspaceControl : UserControl
     private TextBox? _registrySearchBox;
     private TextBlock? _registryStatus;
     private bool _registryLoading;
+    private string _registryMessage = "Загружаем официальный MCP Registry…";
 
     private readonly CatalogKind _kind;
     private readonly StackPanel _items = new();
@@ -371,7 +372,7 @@ public sealed class CatalogWorkspaceControl : UserControl
             _registrySearchBox.KeyDown += async (_, e) => { if (e.Key == System.Windows.Input.Key.Enter) await LoadRegistryServersAsync(_registrySearchBox.Text); };
             searchPanel.Children.Add(_registrySearchBox);
             _items.Children.Add(searchPanel);
-            _registryStatus = new TextBlock { Text = _registryLoading ? "Подключаемся к официальному MCP Registry…" : "Нажми «Найти» или введи название сервера.", Foreground = Brush("#91A7B5"), FontSize = 11, Margin = new Thickness(2, 0, 0, 10) };
+            _registryStatus = new TextBlock { Text = _registryMessage, Foreground = Brush("#91A7B5"), FontSize = 11, Margin = new Thickness(2, 0, 0, 10) };
             _items.Children.Add(_registryStatus);
             foreach (var item in _registryItems) AddRegistryCard(item);
             if (!_registryLoading && _registryItems.Count == 0)
@@ -418,11 +419,13 @@ public sealed class CatalogWorkspaceControl : UserControl
         search = (search ?? "").Trim();
         if (!string.IsNullOrEmpty(search) && search.Length < 3)
         {
-            _registryStatus?.SetCurrentValue(TextBlock.TextProperty, "Для поиска в официальном реестре нужно минимум 3 символа.");
+            _registryMessage = "Для поиска в официальном реестре нужно минимум 3 символа.";
+            _registryStatus?.SetCurrentValue(TextBlock.TextProperty, _registryMessage);
             return;
         }
         if (_registryLoading) return;
         _registryLoading = true;
+        _registryMessage = "Подключаемся к официальному MCP Registry…";
         _registryItems.Clear();
         if (_activePluginTab == "marketplace") RefreshPluginView();
         try
@@ -458,11 +461,13 @@ public sealed class CatalogWorkspaceControl : UserControl
                     _registryItems.Add(new RegistryServer(name, title, description, version, status, registryType, identifier, runtime, transport, repository, website, requiredEnv));
                 }
             }
-            _registryStatus?.SetCurrentValue(TextBlock.TextProperty, $"Получено серверов: {_registryItems.Count}. Источник: registry.modelcontextprotocol.io");
+            _registryMessage = $"Получено серверов: {_registryItems.Count}. Источник: registry.modelcontextprotocol.io";
+            _registryStatus?.SetCurrentValue(TextBlock.TextProperty, _registryMessage);
         }
         catch (Exception ex)
         {
-            _registryStatus?.SetCurrentValue(TextBlock.TextProperty, "Не удалось загрузить каталог: " + ex.Message);
+            _registryMessage = "Не удалось загрузить каталог: " + ex.Message;
+            _registryStatus?.SetCurrentValue(TextBlock.TextProperty, _registryMessage);
         }
         finally
         {
