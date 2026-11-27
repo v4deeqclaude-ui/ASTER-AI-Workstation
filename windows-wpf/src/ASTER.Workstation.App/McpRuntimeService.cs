@@ -87,7 +87,7 @@ internal static class McpRuntimeService
                 var match = tools.FirstOrDefault(x => string.Equals(x.Tool["name"]?.GetValue<string>(), name, StringComparison.Ordinal));
                 if (match.Server is null)
                 {
-                    messages.Add(new JsonObject { ["role"] = "tool", ["content"] = "Ошибка: неизвестный инструмент." });
+                    messages.Add(new JsonObject { ["role"] = "tool", ["tool_name"] = name, ["content"] = "Ошибка: неизвестный инструмент." });
                     continue;
                 }
 
@@ -95,7 +95,7 @@ internal static class McpRuntimeService
                 var argsText = arguments.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
                 if (!await approveToolCall(display, argsText))
                 {
-                    messages.Add(new JsonObject { ["role"] = "tool", ["content"] = "Пользователь отклонил выполнение инструмента." });
+                    messages.Add(new JsonObject { ["role"] = "tool", ["tool_name"] = name, ["content"] = "Пользователь отклонил выполнение инструмента." });
                     continue;
                 }
 
@@ -106,11 +106,11 @@ internal static class McpRuntimeService
                     if (originalToolName.StartsWith(prefix, StringComparison.Ordinal))
                         originalToolName = originalToolName[prefix.Length..];
                     var result = await CallToolAsync(match.Server, originalToolName, arguments, cancellationToken);
-                    messages.Add(new JsonObject { ["role"] = "tool", ["content"] = result });
+                    messages.Add(new JsonObject { ["role"] = "tool", ["tool_name"] = name, ["content"] = result });
                 }
                 catch (Exception ex)
                 {
-                    messages.Add(new JsonObject { ["role"] = "tool", ["content"] = "Ошибка MCP: " + ex.Message });
+                    messages.Add(new JsonObject { ["role"] = "tool", ["tool_name"] = name, ["content"] = "Ошибка MCP: " + ex.Message });
                 }
             }
         }
