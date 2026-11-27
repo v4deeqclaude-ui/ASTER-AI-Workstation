@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -188,7 +189,37 @@ public partial class ChatWindow : UserControl
             if (!string.IsNullOrWhiteSpace(_systemPrompt))
                 history.Insert(0, ("system", _systemPrompt));
 
-            var answer = await OllamaChatClient.SendAsync(settings.OllamaEndpoint, settings.OllamaModel, history);
+            var configuredServers = ReadConfiguredMcpServers();
+            string answer;
+            if (configuredServers.Any(x => x.Enabled))
+            {
+                var serverNames = string.Join("\n", configuredServers.Where(x => x.Enabled).Select(x => "• " + x.Name + " — " + x.Command));
+                var launchApproved = MessageBox.Show(
+                    Window.GetWindow(this),
+                    "Для этого запроса ASTER запустит внешние MCP-программы:\n\n" + serverNames + "\n\nЗапускать их сейчас? Запускаемые программы могут выполнять действия в пределах выданных им прав.",
+                    "Подтверждение запуска MCP-серверов",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning) == MessageBoxResult.Yes;
+                if (!launchApproved)
+                    throw new OperationCanceledException("Запуск MCP-серверов отменён пользователем.");
+                StatusText.Text = "ASTER подключает MCP-инструменты…";
+                answer = await McpRuntimeService.SendWithToolsAsync(
+                    settings.OllamaEndpoint,
+                    settings.OllamaModel,
+                    history,
+                    configuredServers,
+                    (toolName, arguments) => Dispatcher.InvokeAsync(() =>
+                        MessageBox.Show(
+                            Window.GetWindow(this),
+                            $"ASTER хочет выполнить внешний инструмент:\n\n{toolName}\n\nПараметры:\n{arguments}\n\nРазрешить выполнение?",
+                            "Подтверждение MCP-действия",
+                            MessageBoxButton.YesNo,
+                            MessageBoxImage.Warning) == MessageBoxResult.Yes).Task);
+            }
+            else
+            {
+                answer = await OllamaChatClient.SendAsync(settings.OllamaEndpoint, settings.OllamaModel, history);
+            }
             AddMessage("assistant", answer);
             await SaveMessageAsync("assistant", answer);
             StatusText.Text = "Ответ получен от локальной модели. История раздела сохранена.";
@@ -206,6 +237,23 @@ public partial class ChatWindow : UserControl
             SendButton.IsEnabled = true;
             MessageInput.IsEnabled = true;
             MessageInput.Focus();
+        }
+    }
+
+    private static List<McpServerEntry> ReadConfiguredMcpServers()
+    {
+        var path = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "ASTER", "Catalogs", "mcp-servers.json");
+        if (!File.Exists(path)) return new();
+        try
+        {
+            return JsonSerializer.Deserialize<List<McpServerEntry>>(File.ReadAllText(path)) ?? new();
+        }
+        catch (Exception ex)
+        {
+            WorkspaceActivityLog.Write("ERROR", "Не удалось прочитать конфигурацию MCP: " + ex.Message);
+            return new();
         }
     }
 

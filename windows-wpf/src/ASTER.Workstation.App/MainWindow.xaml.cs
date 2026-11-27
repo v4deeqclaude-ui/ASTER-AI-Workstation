@@ -230,11 +230,13 @@ public partial class MainWindow : Window
         WorkspaceActivityLog.Write("NAVIGATION", "Открыт раздел «Проекты».");
     }
 
-    private void Applications_Click(object sender, RoutedEventArgs e)
+    private void MyApplications_Click(object sender, RoutedEventArgs e)
     {
-        SetActiveNavigation(NavApplications);
-        OpenAiWorkspace("APPS", "ПРИЛОЖЕНИЯ",
-            "Ты — ASTER App Creator. Помогай проектировать и создавать новые приложения: сначала уточняй назначение и платформу, затем предлагай архитектуру, интерфейс, структуру проекта и пошаговый план реализации. Учитывай, что пользователь предпочитает готовые файлы и простые инструкции. Не утверждай, что файлы созданы или приложение собрано, если это не подтверждено.");
+        SetActiveNavigation(NavMyApplications);
+        HomePage.Visibility = Visibility.Collapsed;
+        EmbeddedPage.Content = new MyApplicationsControl();
+        EmbeddedPage.Visibility = Visibility.Visible;
+        WorkspaceActivityLog.Write("NAVIGATION", "Открыт раздел «Мои приложения».");
     }
 
     private void Plugin_Click(object sender, RoutedEventArgs e)
@@ -267,6 +269,14 @@ public partial class MainWindow : Window
         SetActiveNavigation(NavPhoto);
         OpenAiWorkspace("PHOTO", "ФОТО",
             "Ты — помощник ASTER для подготовки задач с изображениями. Превращай запрос пользователя в точный промт для создания или редактирования изображения: субъект, композиция, поза, окружение, освещение, стиль, детали, сохранение важных особенностей и негативные ограничения. Не заявляй, что изображение уже обработано: пока готовь промт и уточняй только необходимые детали.");
+    }
+
+    private void Applications_Click(object sender, RoutedEventArgs e)
+    {
+        SetActiveNavigation(NavApplications);
+        OpenAiWorkspace("APP_BUILDER", "ПРИЛОЖЕНИЯ",
+            "Ты — ASTER App Builder, помощник по созданию программных приложений. Работай с пользователем как продуктовый аналитик, UX-дизайнер и инженер-разработчик. Помогай превратить идею в работающее приложение: уточняй только критически важные детали, предлагай структуру экранов и функций, архитектуру и технологический стек, затем создавай код и пошаговый план сборки и проверки. Учитывай, что пользователь предпочитает понятные объяснения и готовые файлы. Не утверждай, что приложение собрано, установлено или опубликовано, если это фактически не выполнено. Начинай с обсуждения идеи и помогай вести проект итерациями.");
+        SetStatus("Открыта мастерская создания приложений с ИИ.");
     }
 
     private void Music_Click(object sender, RoutedEventArgs e)
@@ -319,7 +329,7 @@ public partial class MainWindow : Window
 
     private void SetActiveNavigation(Button active)
     {
-        var buttons = new[] { NavHome, NavProjects, NavPlugin, NavSkill, NavPhoto, NavVideo, NavApplications, NavMusic, NavSettings };
+        var buttons = new[] { NavHome, NavMyApplications, NavProjects, NavPlugin, NavSkill, NavPhoto, NavVideo, NavMusic, NavApplications, NavSettings };
         foreach (var button in buttons)
         {
             button.Background = button == active
