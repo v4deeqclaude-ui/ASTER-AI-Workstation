@@ -407,7 +407,7 @@ public sealed class CatalogWorkspaceControl : UserControl
             }
             catch (Exception ex)
             {
-                MessageBox.Show(dialog, "Не удалось безопасно сохранить секреты.\\n\\n" + ex.Message, "ASTER · Credential Manager", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(dialog, "Не удалось безопасно сохранить секреты.\n\n" + ex.Message, "ASTER · Credential Manager", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
             var servers = ReadMcpServers();
