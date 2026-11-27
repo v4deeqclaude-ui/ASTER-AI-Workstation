@@ -298,6 +298,19 @@ public sealed class CatalogWorkspaceControl : UserControl
         MessageBox.Show(Window.GetWindow(this), "Программа добавлена в список. Сохранён только путь к .exe; это ещё не подключение её функций к ИИ.", "ASTER — PLUGIN", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
+    private static void DeleteMcpSecrets(McpServerEntry server)
+    {
+        const string prefix = "@ASTER_CREDENTIAL:";
+        foreach (var line in (server.EnvironmentVariables ?? "").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            var separator = line.IndexOf('=');
+            if (separator <= 0) continue;
+            var value = line[(separator + 1)..].Trim();
+            if (value.StartsWith(prefix, StringComparison.Ordinal))
+                McpSecretStore.Delete(value[prefix.Length..]);
+        }
+    }
+
     private void AddMcpServer(MarketplaceItem? template = null)
     {
         var existing = template is null ? null : ReadMcpServers().FirstOrDefault(x => string.Equals(x.Name, template.Name, StringComparison.OrdinalIgnoreCase));
@@ -713,7 +726,15 @@ public sealed class CatalogWorkspaceControl : UserControl
         edit.Click += (_, _) => AddMcpServer(new MarketplaceItem(server.Name, "MCP", "Редактирование конфигурации", server.Command, server.Arguments, server.Name));
         var remove = SecondaryButton("Удалить");
         remove.Margin = new Thickness(7, 0, 0, 0);
-        remove.Click += (_, _) => { var list = ReadMcpServers(); list.RemoveAll(x => x.Name == server.Name); WriteMcpServers(list); RefreshPluginView(); };
+        remove.Click += (_, _) =>
+        {
+            var list = ReadMcpServers();
+            var removed = list.Where(x => x.Name == server.Name).ToList();
+            foreach (var item in removed) DeleteMcpSecrets(item);
+            list.RemoveAll(x => x.Name == server.Name);
+            WriteMcpServers(list);
+            RefreshPluginView();
+        };
         buttons.Children.Add(test);
         test.Margin = new Thickness(0, 0, 7, 0);
         buttons.Children.Add(edit);
