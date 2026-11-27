@@ -83,45 +83,47 @@ app.MapGet("/api/github/status", (IConfiguration configuration) =>
     });
 });
 
-app.MapGet("/api/github/connect", (HttpContext http, IConfiguration configuration) =>
+
+app.MapPost("/api/github/pairings", async (HttpContext http, IConfiguration configuration, IPairingStore store, PairingStartRequest request, CancellationToken ct) =>
 {
     var slug = configuration["GitHubApp:Slug"];
-    var publicBaseUrl = configuration["PublicBaseUrl"];
-    var keyRingPath = configuration["DataProtection:KeyRingPath"];
-    var pairingStorePath = configuration["PairingStore:FilePath"];
-    if (string.IsNullOrWhiteSpace(slug) ||
-        !Uri.TryCreate(publicBaseUrl, UriKind.Absolute, out var publicUri) ||
-        publicUri.Scheme != Uri.UriSchemeHttps ||
-        string.IsNullOrWhiteSpace(keyRingPath) ||
-        string.IsNullOrWhiteSpace(pairingStorePath))
-        return Results.Problem(
-            title: "GitHub App is not configured",
-            detail: "ASTER Connect needs the GitHub App slug before it can open the official installation page.",
-            statusCode: StatusCodes.Status503ServiceUnavailable);
+    var publicUrl = configuration["PublicBaseUrl"];
+    if (string.IsNullOrWhiteSpace(slug) || !Uri.TryCreate(publicUrl, UriKind.Absolute, out var publicUri) || publicUri.Scheme != Uri.UriSchemeHttps)
+        return Results.Problem(title: "GitHub App is not configured", statusCode: 503);
+    if (request.Verifier is null || request.Verifier.Length != 64 || !request.Verifier.All(Uri.IsHexDigit))
+        return Results.Problem(title: "Invalid pairing verifier", statusCode: 400);
 
-    if (slug.Length > 100 || slug.Any(ch => !(char.IsAsciiLetterOrDigit(ch) || ch == '-')))
-        return Results.Problem(
-            title: "Invalid GitHub App configuration",
-            detail: "GitHubApp:Slug contains unsupported characters.",
-            statusCode: StatusCodes.Status503ServiceUnavailable);
+    var now = DateTimeOffset.UtcNow;
+    var id = Convert.ToHexString(RandomNumberGenerator.GetBytes(16)).ToLowerInvariant();
+    var hash = Convert.ToHexString(SHA256.HashData(Convert.FromHexString(request.Verifier)));
+    await store.SaveAsync(new PairingRecord(id, hash, now, now.AddMinutes(10), "pending", null), ct);
 
     var state = Convert.ToHexString(RandomNumberGenerator.GetBytes(32));
-    var protectedState = stateProtector.Protect(state, TimeSpan.FromMinutes(10));
+    var protectedState = stateProtector.Protect(id + ":" + state, TimeSpan.FromMinutes(10));
     http.Response.Cookies.Append("aster_github_install_state", protectedState, new CookieOptions
     {
-        HttpOnly = true,
-        Secure = publicUri.Scheme == Uri.UriSchemeHttps,
-        SameSite = SameSiteMode.Lax,
-        IsEssential = true,
-        MaxAge = TimeSpan.FromMinutes(10),
-        Path = "/api/github"
+        HttpOnly = true, Secure = true, SameSite = SameSiteMode.Lax,
+        IsEssential = true, MaxAge = TimeSpan.FromMinutes(10), Path = "/api/github"
     });
-
-    var installUrl = $"https://github.com/apps/{Uri.EscapeDataString(slug)}/installations/new?state={Uri.EscapeDataString(state)}";
-    return Results.Redirect(installUrl);
+    var url = "https://github.com/apps/" + Uri.EscapeDataString(slug) + "/installations/new?state=" + Uri.EscapeDataString(state);
+    return Results.Created("/api/github/pairings/" + id, new { pairingId = id, authorizationUrl = url, expiresAtUtc = now.AddMinutes(10), status = "pending" });
 });
 
-app.MapGet("/api/github/callback", (HttpContext http, string? installation_id, string? setup_action, string? state) =>
+app.MapGet("/api/github/pairings/{id}", async (string id, IPairingStore store, string? verifier, CancellationToken ct) =>
+{
+    if (verifier is null || verifier.Length != 64 || !verifier.All(Uri.IsHexDigit))
+        return Results.Problem(title: "Pairing proof required", statusCode: 401);
+    var record = await store.GetAsync(id, ct);
+    if (record is null || record.ExpiresAtUtc <= DateTimeOffset.UtcNow)
+        return Results.NotFound(new { status = "expired_or_unknown" });
+    var supplied = SHA256.HashData(Convert.FromHexString(verifier));
+    var stored = Convert.FromHexString(record.VerifierHash);
+    if (!CryptographicOperations.FixedTimeEquals(supplied, stored))
+        return Results.Problem(title: "Pairing proof rejected", statusCode: 401);
+    return Results.Ok(new { pairingId = record.Id, status = record.Status, expiresAtUtc = record.ExpiresAtUtc });
+});
+
+app.MapGet("/api/github/callback", async (HttpContext http, string? installation_id, string? setup_action, string? state) =>
 {
     if (string.IsNullOrWhiteSpace(state) || state.Length != 64 ||
         !state.All(Uri.IsHexDigit) ||
@@ -146,13 +148,13 @@ app.MapGet("/api/github/callback", (HttpContext http, string? installation_id, s
             statusCode: StatusCodes.Status400BadRequest);
     }
 
-    var expectedBytes = System.Text.Encoding.ASCII.GetBytes(expectedState);
+    var stateParts = expectedState.Split(new[] { ':' }, 2);\n    var expectedPairingId = stateParts.Length == 2 ? stateParts[0] : string.Empty;\n    var expectedBytes = System.Text.Encoding.ASCII.GetBytes(stateParts.Length == 2 ? stateParts[1] : string.Empty);
     var actualBytes = System.Text.Encoding.ASCII.GetBytes(state);
     var validState = expectedBytes.Length == actualBytes.Length &&
                      CryptographicOperations.FixedTimeEquals(expectedBytes, actualBytes);
     http.Response.Cookies.Delete("aster_github_install_state", new CookieOptions { Path = "/api/github" });
 
-    if (!validState || !string.Equals(setup_action, "install", StringComparison.OrdinalIgnoreCase) ||
+    if (!validState || string.IsNullOrWhiteSpace(expectedPairingId) || !string.Equals(setup_action, "install", StringComparison.OrdinalIgnoreCase) ||
         !long.TryParse(installation_id, out var parsedInstallationId) || parsedInstallationId <= 0)
     {
         return Results.Problem(
@@ -160,6 +162,12 @@ app.MapGet("/api/github/callback", (HttpContext http, string? installation_id, s
             detail: "GitHub did not return a valid installation confirmation. No account or repository was connected.",
             statusCode: StatusCodes.Status400BadRequest);
     }
+
+    var pairingStore = http.RequestServices.GetRequiredService<IPairingStore>();
+    var pairing = await pairingStore.GetAsync(expectedPairingId, http.RequestAborted);
+    if (pairing is null || pairing.ExpiresAtUtc <= DateTimeOffset.UtcNow || pairing.Status != "pending")
+        return Results.Problem(title: "Pairing request expired or already used", statusCode: 410);
+    await pairingStore.SaveAsync(pairing with { Status = "installed", InstallationId = parsedInstallationId }, http.RequestAborted);
 
     return Results.Content($$"""
         <!doctype html>
@@ -176,3 +184,5 @@ app.MapGet("/api/github/callback", (HttpContext http, string? installation_id, s
 });
 
 app.Run();
+
+public sealed record PairingStartRequest(string Verifier);
