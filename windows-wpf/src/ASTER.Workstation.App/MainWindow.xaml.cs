@@ -343,7 +343,5 @@ public partial class MainWindow : Window
         EmptyProjectPanel.Visibility = Visibility.Visible;
     }
 
-    public void ReturnToHome() => Home_Click(this, new RoutedEventArgs());
-
     private void SetStatus(string message) => StatusText.Text = message;
 }
