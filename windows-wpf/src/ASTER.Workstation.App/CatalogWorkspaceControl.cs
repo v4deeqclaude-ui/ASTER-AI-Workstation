@@ -1,5 +1,7 @@
 using System.IO;
+using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.Win32;
@@ -29,13 +31,13 @@ public sealed class CatalogWorkspaceControl : UserControl
 {
     private sealed record MarketplaceItem(string Name, string Category, string Description, string Command, string Arguments, string Id);
 
-    private static readonly MarketplaceItem[] Marketplace =
-    [
-        new("Filesystem", "ФАЙЛЫ И ПАПКИ", "Доступ к выбранным папкам и файловым операциям через MCP-сервер.", "npx", "-y @modelcontextprotocol/server-filesystem", "filesystem"),
-        new("GitHub", "РАЗРАБОТКА", "Работа с репозиториями, файлами, issues и pull requests через MCP.", "npx", "-y @modelcontextprotocol/server-github", "github"),
-        new("Brave Search", "ПОИСК В ИНТЕРНЕТЕ", "Поиск веб-страниц через Brave Search API и MCP.", "npx", "-y @modelcontextprotocol/server-brave-search", "brave-search"),
-        new("SQLite", "БАЗЫ ДАННЫХ", "Запросы к выбранной базе SQLite через MCP-сервер.", "npx", "-y mcp-server-sqlite", "sqlite")
-    ];
+    private static readonly HttpClient RegistryHttp = new() { Timeout = TimeSpan.FromSeconds(25) };
+    private const string RegistryBaseUrl = "https://registry.modelcontextprotocol.io/v0.1/servers";
+    private sealed record RegistryServer(string Name, string Title, string Description, string Version, string Status, string RegistryType, string Identifier, string RuntimeHint, string Transport, string RepositoryUrl, string WebsiteUrl, bool HasRequiredEnvironment);
+    private readonly List<RegistryServer> _registryItems = new();
+    private TextBox? _registrySearchBox;
+    private TextBlock? _registryStatus;
+    private bool _registryLoading;
 
     private readonly CatalogKind _kind;
     private readonly StackPanel _items = new();
@@ -124,7 +126,7 @@ public sealed class CatalogWorkspaceControl : UserControl
         plus.Width = 42;
         plus.FontSize = 20;
         plus.ToolTip = "Добавить плагин или MCP-сервер";
-        plus.Click += (_, _) => ShowAddMenu(plus);
+        plus.Click += async (_, _) => { _activePluginTab = "marketplace"; RefreshPluginView(); await LoadRegistryServersAsync(""); };
         Grid.SetColumn(plus, 4);
         toolbar.Children.Add(plus);
         ConfigureCount(toolbar);
@@ -133,6 +135,7 @@ public sealed class CatalogWorkspaceControl : UserControl
         AddItemsArea(root);
         Content = root;
         RefreshPluginView();
+        _ = LoadRegistryServersAsync("");
     }
 
     private void AddTab(Grid toolbar, string title, string key, int column)
@@ -193,8 +196,8 @@ public sealed class CatalogWorkspaceControl : UserControl
             Background = Brush("#111D2A"), Foreground = Brush("#EAF7FC"),
             BorderBrush = Brush("#29495D"), PlacementTarget = target
         };
-        menu.Items.Add(MenuItem("Открыть Marketplace", () => { _activePluginTab = "marketplace"; RefreshPluginView(); }));
-        menu.Items.Add(MenuItem("Добавить MCP-сервер", () => AddMcpServer()));
+        menu.Items.Add(MenuItem("Открыть Marketplace", () => { _activePluginTab = "marketplace"; RefreshPluginView(); _ = LoadRegistryServersAsync(""); }));
+        menu.Items.Add(MenuItem("Добавить MCP-сервер вручную", () => AddMcpServer()));
         menu.Items.Add(MenuItem("Добавить программу (.exe)", AddDesktopApp));
         menu.IsOpen = true;
     }
@@ -355,11 +358,24 @@ public sealed class CatalogWorkspaceControl : UserControl
         var servers = ReadMcpServers();
         if (_activePluginTab == "marketplace")
         {
-            _count.Text = $"Интеграций: {Marketplace.Length}";
-            AddSectionTitle("MARKETPLACE", "Совместимые MCP-интеграции");
-            _items.Children.Add(InfoCard("Как это работает", "Выбери интеграцию и добавь её конфигурацию. Для запуска сервера, авторизации и передачи его инструментов в чат понадобится следующий этап подключения MCP."));
-            foreach (var item in Marketplace)
-                AddMarketplaceCard(item);
+            _count.Text = _registryLoading ? "Загрузка…" : $"Интеграций: {_registryItems.Count}";
+            AddSectionTitle("OFFICIAL MCP REGISTRY", "Каталог MCP-серверов");
+            _items.Children.Add(InfoCard("Официальный каталог", "Список загружается напрямую из MCP Registry. Каталог показывает опубликованные серверы; перед запуском проверь издателя, репозиторий и необходимые разрешения."));
+            var searchPanel = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
+            var searchButton = PrimaryButton("Найти");
+            searchButton.Margin = new Thickness(8, 0, 0, 0);
+            searchButton.Click += async (_, _) => await LoadRegistryServersAsync(_registrySearchBox?.Text ?? "");
+            DockPanel.SetDock(searchButton, Dock.Right);
+            searchPanel.Children.Add(searchButton);
+            _registrySearchBox = new TextBox { Text = _registrySearchBox?.Text ?? "", Height = 36, Padding = new Thickness(10, 7, 10, 7), FontSize = 13, Background = Brush("#0B1723"), Foreground = Brush("#EAF7FC"), BorderBrush = Brush("#29495D"), VerticalContentAlignment = VerticalAlignment.Center };
+            _registrySearchBox.KeyDown += async (_, e) => { if (e.Key == System.Windows.Input.Key.Enter) await LoadRegistryServersAsync(_registrySearchBox.Text); };
+            searchPanel.Children.Add(_registrySearchBox);
+            _items.Children.Add(searchPanel);
+            _registryStatus = new TextBlock { Text = _registryLoading ? "Подключаемся к официальному MCP Registry…" : "Нажми «Найти» или введи название сервера.", Foreground = Brush("#91A7B5"), FontSize = 11, Margin = new Thickness(2, 0, 0, 10) };
+            _items.Children.Add(_registryStatus);
+            foreach (var item in _registryItems) AddRegistryCard(item);
+            if (!_registryLoading && _registryItems.Count == 0)
+                _items.Children.Add(InfoCard("Каталог пока пуст", "Введи поисковый запрос длиной от трёх символов или обнови список."));
         }
         else if (_activePluginTab == "installed")
         {
@@ -395,6 +411,102 @@ public sealed class CatalogWorkspaceControl : UserControl
         panel.Children.Add(new TextBlock { Text = title, Foreground = Brush("#A8F1FF"), FontSize = 13, FontWeight = FontWeights.SemiBold });
         panel.Children.Add(new TextBlock { Text = description, Foreground = Brush("#91A7B5"), FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 5, 0, 0) });
         return new Border { Background = Brush("#102235"), BorderBrush = Brush("#24516A"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Padding = new Thickness(14), Margin = new Thickness(0, 0, 0, 12), Child = panel };
+    }
+
+    private async Task LoadRegistryServersAsync(string search)
+    {
+        search = (search ?? "").Trim();
+        if (!string.IsNullOrEmpty(search) && search.Length < 3)
+        {
+            _registryStatus?.SetCurrentValue(TextBlock.TextProperty, "Для поиска в официальном реестре нужно минимум 3 символа.");
+            return;
+        }
+        if (_registryLoading) return;
+        _registryLoading = true;
+        _registryItems.Clear();
+        if (_activePluginTab == "marketplace") RefreshPluginView();
+        try
+        {
+            var query = "?version=latest&limit=40";
+            if (!string.IsNullOrEmpty(search)) query += "&search=" + Uri.EscapeDataString(search);
+            using var response = await RegistryHttp.GetAsync(RegistryBaseUrl + query);
+            response.EnsureSuccessStatusCode();
+            var json = JsonNode.Parse(await response.Content.ReadAsStringAsync());
+            var servers = json?["servers"] as JsonArray;
+            if (servers is not null)
+            {
+                foreach (var record in servers)
+                {
+                    var server = record?["server"] ?? record;
+                    if (server is null) continue;
+                    var meta = record?["_meta"]?["io.modelcontextprotocol.registry/official"];
+                    var status = meta?["status"]?.GetValue<string>() ?? "unknown";
+                    if (!string.Equals(status, "active", StringComparison.OrdinalIgnoreCase) && status != "unknown") continue;
+                    var name = server["name"]?.GetValue<string>() ?? "MCP server";
+                    var title = server["title"]?.GetValue<string>() ?? name;
+                    var description = server["description"]?.GetValue<string>() ?? "Описание не предоставлено.";
+                    var version = server["version"]?.GetValue<string>() ?? "—";
+                    var repository = server["repository"]?["url"]?.GetValue<string>() ?? "";
+                    var website = server["websiteUrl"]?.GetValue<string>() ?? "";
+                    var packages = server["packages"] as JsonArray;
+                    var package = packages?.FirstOrDefault();
+                    var registryType = package?["registryType"]?.GetValue<string>() ?? "";
+                    var identifier = package?["identifier"]?.GetValue<string>() ?? "";
+                    var runtime = package?["runtimeHint"]?.GetValue<string>() ?? "";
+                    var transport = package?["transport"]?["type"]?.GetValue<string>() ?? "";
+                    var requiredEnv = package?["environmentVariables"] is JsonArray env && env.Any(x => x?["isRequired"]?.GetValue<bool>() == true);
+                    _registryItems.Add(new RegistryServer(name, title, description, version, status, registryType, identifier, runtime, transport, repository, website, requiredEnv));
+                }
+            }
+            _registryStatus?.SetCurrentValue(TextBlock.TextProperty, $"Получено серверов: {_registryItems.Count}. Источник: registry.modelcontextprotocol.io");
+        }
+        catch (Exception ex)
+        {
+            _registryStatus?.SetCurrentValue(TextBlock.TextProperty, "Не удалось загрузить каталог: " + ex.Message);
+        }
+        finally
+        {
+            _registryLoading = false;
+            if (_activePluginTab == "marketplace") RefreshPluginView();
+        }
+    }
+
+    private void AddRegistryCard(RegistryServer item)
+    {
+        var body = new StackPanel();
+        body.Children.Add(new TextBlock { Text = item.RegistryType.ToUpperInvariant() + " · " + item.Status.ToUpperInvariant(), Foreground = Brush("#16C8F5"), FontSize = 9, FontWeight = FontWeights.SemiBold });
+        body.Children.Add(new TextBlock { Text = item.Title, Foreground = Brush("#EAF7FC"), FontSize = 16, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 4, 0, 3) });
+        body.Children.Add(new TextBlock { Text = item.Name + " · v" + item.Version, Foreground = Brush("#A8C7D5"), FontSize = 10 });
+        body.Children.Add(new TextBlock { Text = item.Description, Foreground = Brush("#91A7B5"), FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) });
+        if (!string.IsNullOrWhiteSpace(item.RepositoryUrl))
+            body.Children.Add(new TextBlock { Text = "Репозиторий: " + item.RepositoryUrl, Foreground = Brush("#A8C7D5"), FontSize = 10, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) });
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 10, 0, 0) };
+        var details = SecondaryButton("Подробнее");
+        details.Click += (_, _) => MessageBox.Show(Window.GetWindow(this),
+            $"{item.Title}\\n\\nИмя: {item.Name}\\nВерсия: {item.Version}\\nСтатус: {item.Status}\\nТип пакета: {item.RegistryType}\\nПакет: {item.Identifier}\\nТранспорт: {item.Transport}\\nRuntime: {item.RuntimeHint}\\nОбязательные переменные: {(item.HasRequiredEnvironment ? "да" : "нет")}\\nРепозиторий: {item.RepositoryUrl}\\nСайт: {item.WebsiteUrl}\\n\\nПеред запуском проверь источник и разрешения сервера.",
+            "MCP Registry · сведения о сервере", MessageBoxButton.OK, MessageBoxImage.Information);
+        buttons.Children.Add(details);
+        if (string.Equals(item.RegistryType, "npm", StringComparison.OrdinalIgnoreCase) &&
+            string.Equals(item.Transport, "stdio", StringComparison.OrdinalIgnoreCase) &&
+            !string.IsNullOrWhiteSpace(item.Identifier) && !item.HasRequiredEnvironment)
+        {
+            var add = PrimaryButton("Добавить MCP");
+            add.Margin = new Thickness(8, 0, 0, 0);
+            add.Click += (_, _) =>
+            {
+                var runtime = string.IsNullOrWhiteSpace(item.RuntimeHint) ? "npx" : item.RuntimeHint;
+                if (!string.Equals(runtime, "npx", StringComparison.OrdinalIgnoreCase))
+                {
+                    MessageBox.Show(Window.GetWindow(this), "Автоматическое создание конфигурации пока поддерживает npm-пакеты с runtime npx. Открой сведения сервера и настрой остальные варианты вручную.", "ASTER MCP", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+                var package = item.Identifier + (string.IsNullOrWhiteSpace(item.Version) || item.Version == "—" ? "" : "@" + item.Version);
+                AddMcpServer(new MarketplaceItem(item.Title, "MCP REGISTRY", item.Description, "npx", "-y " + package, item.Name));
+            };
+            buttons.Children.Add(add);
+        }
+        body.Children.Add(buttons);
+        _items.Children.Add(new Border { Background = Brush("#111D2A"), BorderBrush = Brush("#294052"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(9), Padding = new Thickness(14), Margin = new Thickness(0, 0, 0, 10), Child = body });
     }
 
     private void AddMarketplaceCard(MarketplaceItem item)
