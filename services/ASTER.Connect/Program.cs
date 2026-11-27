@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.DataProtection;
+using ASTER.Connect.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
 var keyRingPath = builder.Configuration["DataProtection:KeyRingPath"];
@@ -8,6 +9,15 @@ if (!string.IsNullOrWhiteSpace(keyRingPath))
 {
     Directory.CreateDirectory(keyRingPath);
     dataProtection.PersistKeysToFileSystem(new DirectoryInfo(keyRingPath));
+}
+
+var pairingStorePath = builder.Configuration["PairingStore:FilePath"];
+if (!string.IsNullOrWhiteSpace(pairingStorePath))
+{
+    builder.Services.AddSingleton<IPairingStore>(services =>
+        new EncryptedFilePairingStore(
+            pairingStorePath,
+            services.GetRequiredService<IDataProtectionProvider>()));
 }
 
 var app = builder.Build();
@@ -34,11 +44,13 @@ app.MapGet("/health/ready", (IConfiguration configuration) =>
     var appSlug = configuration["GitHubApp:Slug"];
     var publicBaseUrl = configuration["PublicBaseUrl"];
     var keyRingPath = configuration["DataProtection:KeyRingPath"];
+    var pairingStorePath = configuration["PairingStore:FilePath"];
     var missing = new List<string>();
     if (string.IsNullOrWhiteSpace(appSlug)) missing.Add("GitHubApp:Slug");
     if (!Uri.TryCreate(publicBaseUrl, UriKind.Absolute, out var publicUri) || publicUri.Scheme != Uri.UriSchemeHttps)
         missing.Add("PublicBaseUrl (must be an HTTPS URL)");
     if (string.IsNullOrWhiteSpace(keyRingPath)) missing.Add("DataProtection:KeyRingPath (persistent storage required)");
+    if (string.IsNullOrWhiteSpace(pairingStorePath)) missing.Add("PairingStore:FilePath (encrypted pairing store path required)");
 
     return Results.Json(new
     {
@@ -46,7 +58,7 @@ app.MapGet("/health/ready", (IConfiguration configuration) =>
         service = "ASTER Connect",
         githubAppConfigured = missing.Count == 0,
         missingConfiguration = missing,
-        note = "Installation callback validation is enabled. Token exchange, repository access and persistent credential storage are not enabled yet."
+        note = "Encrypted single-instance pairing storage is available as infrastructure. Pairing endpoints, account binding, token exchange and repository access are not enabled yet."
     }, statusCode: missing.Count == 0 ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable);
 });
 
@@ -55,7 +67,8 @@ app.MapGet("/api/github/status", (IConfiguration configuration) =>
     var configured = !string.IsNullOrWhiteSpace(configuration["GitHubApp:Slug"]) &&
                      Uri.TryCreate(configuration["PublicBaseUrl"], UriKind.Absolute, out var publicUri) &&
                      publicUri.Scheme == Uri.UriSchemeHttps &&
-                     !string.IsNullOrWhiteSpace(configuration["DataProtection:KeyRingPath"]);
+                     !string.IsNullOrWhiteSpace(configuration["DataProtection:KeyRingPath"]) &&
+                     !string.IsNullOrWhiteSpace(configuration["PairingStore:FilePath"]);
     return Results.Ok(new
     {
         provider = "github",
@@ -75,10 +88,12 @@ app.MapGet("/api/github/connect", (HttpContext http, IConfiguration configuratio
     var slug = configuration["GitHubApp:Slug"];
     var publicBaseUrl = configuration["PublicBaseUrl"];
     var keyRingPath = configuration["DataProtection:KeyRingPath"];
+    var pairingStorePath = configuration["PairingStore:FilePath"];
     if (string.IsNullOrWhiteSpace(slug) ||
         !Uri.TryCreate(publicBaseUrl, UriKind.Absolute, out var publicUri) ||
         publicUri.Scheme != Uri.UriSchemeHttps ||
-        string.IsNullOrWhiteSpace(keyRingPath))
+        string.IsNullOrWhiteSpace(keyRingPath) ||
+        string.IsNullOrWhiteSpace(pairingStorePath))
         return Results.Problem(
             title: "GitHub App is not configured",
             detail: "ASTER Connect needs the GitHub App slug before it can open the official installation page.",
