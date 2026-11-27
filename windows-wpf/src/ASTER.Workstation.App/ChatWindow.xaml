@@ -37,7 +37,7 @@
 
             <Border Grid.ColumnSpan="2" Background="#061522" BorderBrush="#17415D"
                     BorderThickness="1" CornerRadius="14" Opacity="0.52"/>
-            <Image x:Name="HeroImage" Grid.Column="1" Width="330" Height="440" MaxWidth="100%" HorizontalAlignment="Right" VerticalAlignment="Center" Stretch="Uniform" IsHitTestVisible="False" Opacity="0.98" Margin="0,0,8,0"/>
+            <Image x:Name="HeroImage" Grid.Column="1" Width="330" Height="440" HorizontalAlignment="Right" VerticalAlignment="Center" Stretch="Uniform" IsHitTestVisible="False" Opacity="0.98" Margin="0,0,8,0"/>
 
             <StackPanel Grid.Column="0" Margin="28,38,0,0" VerticalAlignment="Top"
                         MaxWidth="480">
