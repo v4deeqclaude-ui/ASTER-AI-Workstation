@@ -42,15 +42,12 @@ public sealed class CatalogWorkspaceControl : UserControl
         root.Children.Add(heading);
 
         var actions = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 14) };
-        var add = new Button { Content = kind == CatalogKind.Skill ? "＋  Добавить навык" : "＋  Добавить плагин", Padding = new Thickness(16, 9, 16, 9), Background = Brush("#16C8F5"), Foreground = Brush("#06131C"), BorderBrush = Brush("#16C8F5"), FontWeight = FontWeights.SemiBold };
-        add.Click += (_, _) => AddEntry();
+        var add = new Button { Content = "＋  Добавить", Padding = new Thickness(16, 9, 16, 9), Background = Brush("#16C8F5"), Foreground = Brush("#06131C"), BorderBrush = Brush("#16C8F5"), FontWeight = FontWeights.SemiBold };
+        add.Click += (_, _) => { if (_kind == CatalogKind.Plugin) AddDesktopApp(); else AddSkillFiles(); };
         actions.Children.Add(add);
-        if (kind == CatalogKind.Plugin)
-        {
-            var desktop = new Button { Content = "＋  Добавить", Padding = new Thickness(14, 9, 14, 9), Margin = new Thickness(9, 0, 0, 0) };
-            desktop.Click += (_, _) => AddDesktopApp();
-            actions.Children.Add(desktop);
-        }
+        var manual = new Button { Content = "＋  Создать вручную", Padding = new Thickness(14, 9, 14, 9), Margin = new Thickness(9, 0, 0, 0) };
+        manual.Click += (_, _) => AddEntry();
+        actions.Children.Add(manual);
         _count.VerticalAlignment = VerticalAlignment.Center;
         _count.Foreground = Brush("#91A7B5");
         _count.Margin = new Thickness(14, 0, 0, 0);
@@ -106,6 +103,36 @@ public sealed class CatalogWorkspaceControl : UserControl
         dialog.Owner = Window.GetWindow(this);
         dialog.ShowDialog();
         Refresh();
+    }
+
+    private void AddSkillFiles()
+    {
+        var dialog = new OpenFileDialog
+        {
+            Title = "Выбери файлы для каталога SKILL",
+            Filter = "Поддерживаемые файлы|*.txt;*.md;*.pdf;*.doc;*.docx;*.json;*.xml;*.cs;*.py;*.js;*.xaml;*.exe|Все файлы (*.*)|*.*",
+            Multiselect = true,
+            CheckFileExists = true
+        };
+        if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
+
+        var entries = ReadEntries();
+        foreach (var path in dialog.FileNames)
+        {
+            if (entries.Any(x => string.Equals(x.Details, path, StringComparison.OrdinalIgnoreCase))) continue;
+            entries.Add(new CatalogEntry
+            {
+                Name = Path.GetFileName(path),
+                Description = "Файл навыка · " + Path.GetExtension(path).TrimStart('.').ToUpperInvariant(),
+                Details = path,
+                EntryType = "skill-file"
+            });
+        }
+        WriteEntries(entries);
+        Refresh();
+        MessageBox.Show(Window.GetWindow(this),
+            "Файлы добавлены в каталог SKILL. ASTER сохранила их названия и пути. Файлы .exe не запускаются автоматически.",
+            "ASTER — SKILL", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void AddDesktopApp()
