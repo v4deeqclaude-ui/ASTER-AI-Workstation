@@ -305,10 +305,9 @@ public sealed class CatalogWorkspaceControl : UserControl
         var name = Field("НАЗВАНИЕ", template?.Name ?? "");
         var command = Field("КОМАНДА ЗАПУСКА", template?.Command ?? "npx");
         var args = Field("АРГУМЕНТЫ КОМАНДЫ", template?.Arguments ?? "-y <package-name>", true);
-        var env = Field("ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ (по одной KEY=VALUE в строке)", "", true);
         var note = new TextBlock
         {
-            Text = "Пока сохраняется конфигурация. Реальный запуск MCP, проверка соединения и выдача инструментов чату будут включены после добавления протокольного клиента. Не вставляй секретные токены в это поле.",
+            Text = "ASTER запускает выбранную команду MCP только после отдельного подтверждения. Секреты и API-ключи пока не поддерживаются в настройках: не добавляй их в аргументы команды. Для интеграций с авторизацией потребуется безопасное хранилище ключей.",
             Foreground = Brush("#E6C47A"), TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 12, 0, 12)
         };
         panel.Children.Add(note);
@@ -323,7 +322,7 @@ public sealed class CatalogWorkspaceControl : UserControl
             }
             var servers = ReadMcpServers();
             servers.RemoveAll(x => string.Equals(x.Name, name.Text.Trim(), StringComparison.OrdinalIgnoreCase));
-            servers.Add(new McpServerEntry { Name = name.Text.Trim(), Command = command.Text.Trim(), Arguments = args.Text.Trim(), EnvironmentVariables = env.Text.Trim(), Enabled = true });
+            servers.Add(new McpServerEntry { Name = name.Text.Trim(), Command = command.Text.Trim(), Arguments = args.Text.Trim(), EnvironmentVariables = "", Enabled = true });
             WriteMcpServers(servers);
             dialog.DialogResult = true;
             dialog.Close();
