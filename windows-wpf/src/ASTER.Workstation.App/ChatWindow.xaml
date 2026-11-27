@@ -98,30 +98,10 @@
                                         Margin="3" Padding="10,8" Background="#142A3A"
                                         Foreground="#C8E5F0" BorderBrush="#29495D"/>
                             </UniformGrid>
-                            <UniformGrid x:Name="IntegrationIconsPanel" Columns="3">
+                            <UniformGrid x:Name="IntegrationIconsPanel" Columns="1">
                                 <Button Tag="GitHub" Click="Integration_Click" Margin="4" Padding="8"
                                         Background="#12283B" Foreground="#EAF7FC" BorderBrush="#24516A">
-                                    <StackPanel><TextBlock Text="●" FontSize="25" HorizontalAlignment="Center"/><TextBlock Text="GitHub" HorizontalAlignment="Center" Margin="0,4,0,0"/></StackPanel>
-                                </Button>
-                                <Button Tag="Unity" Click="Integration_Click" Margin="4" Padding="8"
-                                        Background="#12283B" Foreground="#EAF7FC" BorderBrush="#24516A">
-                                    <StackPanel><TextBlock Text="⬡" FontSize="25" HorizontalAlignment="Center"/><TextBlock Text="Unity" HorizontalAlignment="Center" Margin="0,4,0,0"/></StackPanel>
-                                </Button>
-                                <Button Tag="Blender" Click="Integration_Click" Margin="4" Padding="8"
-                                        Background="#12283B" Foreground="#EAF7FC" BorderBrush="#24516A">
-                                    <StackPanel><TextBlock Text="◉" FontSize="25" HorizontalAlignment="Center"/><TextBlock Text="Blender" HorizontalAlignment="Center" Margin="0,4,0,0"/></StackPanel>
-                                </Button>
-                                <Button Tag="Visual Studio Code" Click="Integration_Click" Margin="4" Padding="8"
-                                        Background="#12283B" Foreground="#EAF7FC" BorderBrush="#24516A">
-                                    <StackPanel><TextBlock Text="〈/〉" FontSize="20" HorizontalAlignment="Center"/><TextBlock Text="VS Code" HorizontalAlignment="Center" Margin="0,4,0,0"/></StackPanel>
-                                </Button>
-                                <Button Tag="Google Drive" Click="Integration_Click" Margin="4" Padding="8"
-                                        Background="#12283B" Foreground="#EAF7FC" BorderBrush="#24516A">
-                                    <StackPanel><TextBlock Text="▲" FontSize="25" HorizontalAlignment="Center"/><TextBlock Text="Drive" HorizontalAlignment="Center" Margin="0,4,0,0"/></StackPanel>
-                                </Button>
-                                <Button Tag="Notion" Click="Integration_Click" Margin="4" Padding="8"
-                                        Background="#12283B" Foreground="#EAF7FC" BorderBrush="#24516A">
-                                    <StackPanel><TextBlock Text="N" FontSize="25" FontWeight="Bold" HorizontalAlignment="Center"/><TextBlock Text="Notion" HorizontalAlignment="Center" Margin="0,4,0,0"/></StackPanel>
+                                    <StackPanel><TextBlock Text="●" FontSize="25" HorizontalAlignment="Center"/><TextBlock Text="GitHub" HorizontalAlignment="Center" Margin="0,4,0,0"/><TextBlock Text="Подключить репозитории" FontSize="10" Foreground="#91A7B5" HorizontalAlignment="Center"/></StackPanel>
                                 </Button>
                             </UniformGrid>
                             <StackPanel x:Name="AttachmentOptionsPanel" Visibility="Collapsed">
