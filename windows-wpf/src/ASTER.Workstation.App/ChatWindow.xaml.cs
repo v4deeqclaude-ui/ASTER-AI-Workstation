@@ -11,19 +11,32 @@ public sealed class ChatMessageView
 {
     public string Author { get; init; } = "";
     public string Content { get; init; } = "";
-    public string BubbleBrush { get; init; } = "#202630";
 }
 
 public partial class ChatWindow : UserControl
 {
     private readonly SqliteDatabase _database;
     private readonly ObservableCollection<ChatMessageView> _messages = new();
+    private readonly string _workspaceKey;
+    private readonly string _sectionTitle;
+    private readonly string _systemPrompt;
     private bool _sending;
 
-    public ChatWindow(SqliteDatabase database)
+    public ChatWindow(
+        SqliteDatabase database,
+        string workspaceKey = "CHAT",
+        string sectionTitle = "ИИ-чат",
+        string systemPrompt = "")
     {
         InitializeComponent();
         _database = database;
+        _workspaceKey = workspaceKey;
+        _sectionTitle = sectionTitle;
+        _systemPrompt = systemPrompt;
+        SectionTitleText.Text = sectionTitle;
+        SectionSubtitleText.Text = workspaceKey == "CHAT"
+            ? "Локальный ИИ Ollama · переписка хранится на этом компьютере"
+            : "Отдельная рабочая переписка · инструкции ASTER применяются автоматически";
         MessagesList.ItemsSource = _messages;
         Loaded += async (_, _) => await LoadMessagesAsync();
     }
@@ -33,7 +46,8 @@ public partial class ChatWindow : UserControl
         await using var connection = _database.CreateConnection();
         await connection.OpenAsync();
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT Role, Content FROM AiMessages ORDER BY Id;";
+        command.CommandText = "SELECT Role, Content FROM AiMessages WHERE Workspace = $workspace ORDER BY Id;";
+        command.Parameters.AddWithValue("$workspace", _workspaceKey);
         await using var reader = await command.ExecuteReaderAsync();
         var loadedCount = 0;
         while (await reader.ReadAsync())
@@ -41,7 +55,7 @@ public partial class ChatWindow : UserControl
             AddMessage(reader.GetString(0), reader.GetString(1));
             loadedCount++;
         }
-        WorkspaceActivityLog.Write("CHAT", $"Загружена история локального AI-чата: {loadedCount} сообщений.");
+        WorkspaceActivityLog.Write("CHAT", $"Загружена история раздела «{_sectionTitle}»: {loadedCount} сообщений.");
         ScrollToEnd();
     }
 
@@ -67,7 +81,7 @@ public partial class ChatWindow : UserControl
         MessageInput.IsEnabled = false;
         MessageInput.Clear();
 
-        WorkspaceActivityLog.Write("CHAT", $"Отправлено сообщение локальной модели (символов: {text.Length}). Содержимое не записывается в системный журнал.");
+        WorkspaceActivityLog.Write("CHAT", $"Отправлено сообщение в раздел «{_sectionTitle}» (символов: {text.Length}).");
         AddMessage("user", text);
         await SaveMessageAsync("user", text);
         StatusText.Text = $"ASTER обращается к локальной модели {settings.OllamaModel}…";
@@ -75,11 +89,14 @@ public partial class ChatWindow : UserControl
         try
         {
             var history = await ReadRecentMessagesAsync(24);
+            if (!string.IsNullOrWhiteSpace(_systemPrompt))
+                history.Insert(0, ("system", _systemPrompt));
+
             var answer = await OllamaChatClient.SendAsync(settings.OllamaEndpoint, settings.OllamaModel, history);
             AddMessage("assistant", answer);
             await SaveMessageAsync("assistant", answer);
-            StatusText.Text = "Ответ получен от локальной модели. История сохранена на компьютере.";
-            WorkspaceActivityLog.Write("CHAT", "Получен ответ от локальной модели Ollama; история сохранена.");
+            StatusText.Text = "Ответ получен от локальной модели. История раздела сохранена.";
+            WorkspaceActivityLog.Write("CHAT", $"Получен ответ Ollama в разделе «{_sectionTitle}».");
         }
         catch (Exception ex)
         {
@@ -102,7 +119,8 @@ public partial class ChatWindow : UserControl
         await using var connection = _database.CreateConnection();
         await connection.OpenAsync();
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT Role, Content FROM AiMessages ORDER BY Id DESC LIMIT $limit;";
+        command.CommandText = "SELECT Role, Content FROM AiMessages WHERE Workspace = $workspace ORDER BY Id DESC LIMIT $limit;";
+        command.Parameters.AddWithValue("$workspace", _workspaceKey);
         command.Parameters.AddWithValue("$limit", limit);
         await using var reader = await command.ExecuteReaderAsync();
         while (await reader.ReadAsync()) items.Add((reader.GetString(0), reader.GetString(1)));
@@ -115,21 +133,20 @@ public partial class ChatWindow : UserControl
         await using var connection = _database.CreateConnection();
         await connection.OpenAsync();
         await using var command = connection.CreateCommand();
-        command.CommandText = "INSERT INTO AiMessages (Role, Content, CreatedUtc) VALUES ($role, $content, $created);";
+        command.CommandText = "INSERT INTO AiMessages (Role, Content, CreatedUtc, Workspace) VALUES ($role, $content, $created, $workspace);";
         command.Parameters.AddWithValue("$role", role);
         command.Parameters.AddWithValue("$content", content);
         command.Parameters.AddWithValue("$created", DateTime.UtcNow.ToString("O"));
+        command.Parameters.AddWithValue("$workspace", _workspaceKey);
         await command.ExecuteNonQueryAsync();
     }
 
     private void AddMessage(string role, string content)
     {
-        var isUser = role == "user";
         _messages.Add(new ChatMessageView
         {
             Author = role switch { "user" => "ТЫ", "assistant" => "ASTER AI", _ => "СИСТЕМА" },
-            Content = content,
-            BubbleBrush = isUser ? "#29313D" : "#202A27"
+            Content = content
         });
         ScrollToEnd();
     }
