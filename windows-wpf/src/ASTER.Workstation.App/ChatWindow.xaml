@@ -51,7 +51,7 @@
                 <Path Data="M 95,390 L 128,390 M 232,390 L 265,390" Stroke="#A8F1FF" StrokeThickness="5" Fill="Transparent"/>
                 <Path Data="M 49,174 L 68,174 M 292,174 L 311,174 M 180,318 L 180,344"
                       Stroke="#A8F1FF" StrokeThickness="2" Fill="Transparent"/>
-            </Canvas>>
+            </Canvas>
 
             <ListBox x:Name="MessagesList" Background="Transparent" BorderThickness="0"
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
