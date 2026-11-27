@@ -121,6 +121,16 @@ public partial class ChatWindow : UserControl
         UpdateAttachmentsLabel();
     }
 
+    private void QuickAction_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string prompt } && !string.IsNullOrWhiteSpace(prompt))
+        {
+            MessageInput.Text = prompt;
+            MessageInput.Focus();
+            MessageInput.CaretIndex = MessageInput.Text.Length;
+        }
+    }
+
     private async void Send_Click(object sender, RoutedEventArgs e) => await SendMessageAsync();
 
     private async void MessageInput_KeyDown(object sender, KeyEventArgs e)
