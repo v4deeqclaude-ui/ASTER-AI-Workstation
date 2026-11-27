@@ -1,23 +1,12 @@
-using Microsoft.AspNetCore.HttpOverrides;
-
 var builder = WebApplication.CreateBuilder(args);
-
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    options.KnownNetworks.Clear();
-    options.KnownProxies.Clear();
-});
-
 var app = builder.Build();
-app.UseForwardedHeaders();
 
 app.MapGet("/", () => Results.Ok(new
 {
     service = "ASTER Connect",
     version = "0.7.0",
     status = "starting",
-    documentation = "/health/ready"
+    health = "/health/live"
 }));
 
 app.MapGet("/health/live", () => Results.Ok(new
