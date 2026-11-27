@@ -48,10 +48,14 @@ public sealed class CatalogWorkspaceControl : UserControl
     private readonly string _filePath;
     private readonly string _mcpFilePath;
     private string _activePluginTab = "marketplace";
+    private readonly string? _selectedIntegration;
 
-    public CatalogWorkspaceControl(CatalogKind kind)
+    public CatalogWorkspaceControl(CatalogKind kind, string? selectedIntegration = null)
     {
         _kind = kind;
+        _selectedIntegration = string.IsNullOrWhiteSpace(selectedIntegration) ? null : selectedIntegration.Trim();
+        if (kind == CatalogKind.Plugin && _selectedIntegration is not null)
+            _activePluginTab = "integrations";
         var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ASTER", "Catalogs");
         Directory.CreateDirectory(folder);
         _filePath = Path.Combine(folder, kind == CatalogKind.Skill ? "skills.json" : "plugins.json");
@@ -120,17 +124,19 @@ public sealed class CatalogWorkspaceControl : UserControl
         toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        AddTab(toolbar, "Marketplace", "marketplace", 0);
-        AddTab(toolbar, "Мои плагины", "installed", 1);
-        AddTab(toolbar, "MCP-серверы", "mcp", 2);
+        AddTab(toolbar, "Приложения", "integrations", 0);
+        AddTab(toolbar, "Marketplace", "marketplace", 1);
+        AddTab(toolbar, "Мои плагины", "installed", 2);
+        AddTab(toolbar, "MCP-серверы", "mcp", 3);
         var plus = PrimaryButton("+");
         plus.Width = 42;
         plus.FontSize = 20;
         plus.ToolTip = "Добавить плагин или MCP-сервер";
         plus.Click += async (_, _) => { _activePluginTab = "marketplace"; RefreshPluginView(); await LoadRegistryServersAsync(""); };
-        Grid.SetColumn(plus, 4);
+        Grid.SetColumn(plus, 5);
         toolbar.Children.Add(plus);
         ConfigureCount(toolbar);
         Grid.SetRow(toolbar, 1);
@@ -409,6 +415,18 @@ public sealed class CatalogWorkspaceControl : UserControl
             if (!_registryLoading && _registryItems.Count == 0)
                 _items.Children.Add(InfoCard("Каталог пока пуст", "Введи поисковый запрос длиной от трёх символов или обнови список."));
         }
+        else if (_activePluginTab == "integrations")
+        {
+            _count.Text = "Каталог приложений";
+            AddSectionTitle("APP INTEGRATIONS", "Подключение приложений");
+            _items.Children.Add(InfoCard("Реальный статус подключений", "Карточки показывают состояние интеграции. Конфигурация MCP сама по себе не означает успешное подключение. Статус изменится только после проверки сервера и получения инструментов."));
+            AddBuiltInIntegrationCard("GitHub", "Репозитории, issues, pull requests и поиск по коду.", "Официальный GitHub MCP Server. Для доступа потребуется авторизация GitHub и защищённое хранение токена. Хранение секретов ещё не реализовано — не вставляй токен в аргументы команды или обычный JSON.");
+            AddBuiltInIntegrationCard("Unity", "Работа с открытым Unity Editor: сцены, объекты, компоненты и редакторские задачи.", "Требуется установить совместимый Unity Editor MCP-плагин в проект и запустить локальный MCP-мост. ASTER должна подключаться к этому мосту через STDIO или Streamable HTTP. Само наличие Unity на компьютере не подключает редактор.");
+            AddBuiltInIntegrationCard("Blender", "Работа с открытой Blender-сценой, объектами, материалами и операциями.", "Требуется установить Blender MCP add-on и запустить локальный мост. ASTER подключается к работающему мосту; установка Blender сама по себе не предоставляет ИИ доступ к сцене.");
+            AddBuiltInIntegrationCard("Visual Studio Code", "Работа с файлами и проектами разработки.", "Для полноценного управления редактором понадобится отдельный проверенный MCP-сервер или расширение. Открытие VS Code как программы не предоставляет ИИ доступ к его инструментам.");
+            AddBuiltInIntegrationCard("Google Drive", "Поиск и работа с файлами облачного хранилища.", "Потребуется OAuth-авторизация Google и отдельный коннектор с ограниченными разрешениями. Не вводи пароль Google в конфигурацию MCP.");
+            AddBuiltInIntegrationCard("Notion", "Поиск и управление страницами и базами данных.", "Потребуется авторизация Notion и отдельный коннектор с явно выданными разрешениями.");
+        }
         else if (_activePluginTab == "installed")
         {
             _count.Text = $"Плагинов: {plugins.Count}";
@@ -429,6 +447,56 @@ public sealed class CatalogWorkspaceControl : UserControl
             _items.Children.Add(add);
             foreach (var server in servers) AddMcpCard(server);
         }
+    }
+
+    private void AddBuiltInIntegrationCard(string name, string description, string requirements)
+    {
+        var configured = ReadMcpServers().Any(x => x.Enabled &&
+            (x.Name.Contains(name, StringComparison.OrdinalIgnoreCase) ||
+             (name == "GitHub" && x.Name.Contains("github", StringComparison.OrdinalIgnoreCase)) ||
+             (name == "Unity" && x.Name.Contains("unity", StringComparison.OrdinalIgnoreCase)) ||
+             (name == "Blender" && x.Name.Contains("blender", StringComparison.OrdinalIgnoreCase))));
+        var body = new StackPanel();
+        var header = new DockPanel();
+        var title = new TextBlock { Text = name, Foreground = Brush("#EAF7FC"), FontSize = 17, FontWeight = FontWeights.SemiBold };
+        DockPanel.SetDock(title, Dock.Left);
+        header.Children.Add(title);
+        var status = new TextBlock
+        {
+            Text = configured ? "КОНФИГУРАЦИЯ ЕСТЬ · НЕ ПРОВЕРЕНА" : "НЕ ПОДКЛЮЧЕНО",
+            Foreground = Brush("#E6C47A"), FontSize = 9, VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+        DockPanel.SetDock(status, Dock.Right);
+        header.Children.Add(status);
+        body.Children.Add(header);
+        body.Children.Add(new TextBlock { Text = description, Foreground = Brush("#91A7B5"), FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) });
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 10, 0, 0) };
+        var details = SecondaryButton("Требования");
+        details.Click += (_, _) => MessageBox.Show(Window.GetWindow(this), requirements, name + " · требования к подключению", MessageBoxButton.OK, MessageBoxImage.Information);
+        buttons.Children.Add(details);
+        var configure = PrimaryButton(configured ? "Открыть MCP-серверы" : "Добавить MCP-сервер");
+        configure.Margin = new Thickness(8, 0, 0, 0);
+        configure.Click += (_, _) =>
+        {
+            if (configured)
+            {
+                _activePluginTab = "mcp";
+                RefreshPluginView();
+            }
+            else
+            {
+                AddMcpServer(new MarketplaceItem(name, "APP INTEGRATION", description, "npx", "-y <проверенный-пакет-MCP>", name));
+            }
+        };
+        buttons.Children.Add(configure);
+        body.Children.Add(buttons);
+        _items.Children.Add(new Border
+        {
+            Background = Brush("#111D2A"), BorderBrush = Brush("#294052"), BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(9), Padding = new Thickness(14),
+            Margin = new Thickness(0, 0, 0, 10), Child = body
+        });
     }
 
     private void AddSectionTitle(string eyebrow, string title)
