@@ -11,7 +11,6 @@ on:
       - feature/aster-v04-deep-space
       - feature/aster-v05-plugin-marketplace
       - feature/aster-v06-mcp-transports
-      - feature/aster-v06-visual-integration-catalog
     paths:
       - 'windows-wpf/**'
       - '.github/workflows/build-wpf.yml'
