@@ -9,6 +9,7 @@ on:
       - fix/aster-oauth-diagnostics-2026-11
       - feature/aster-neon-future-ui
       - feature/aster-v04-deep-space
+      - feature/aster-v05-plugin-marketplace
     paths:
       - 'windows-wpf/**'
       - '.github/workflows/build-wpf.yml'
@@ -16,6 +17,7 @@ on:
     branches:
       - fix/aster-oauth-diagnostics-2026-11
       - feature/aster-workspace-hierarchy-v2
+      - feature/aster-v04-deep-space
   workflow_dispatch:
 
 permissions:
@@ -51,7 +53,7 @@ jobs:
       - name: Upload Windows application
         uses: actions/upload-artifact@v4
         with:
-          name: ASTER-AI-Workstation-0.4-deep-space-win-x64
+          name: ASTER-AI-Workstation-0.5-plugin-marketplace-win-x64
           path: windows-wpf/artifacts/publish/
           if-no-files-found: error
           retention-days: 14
