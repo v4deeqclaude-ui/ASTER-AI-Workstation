@@ -326,7 +326,11 @@ public sealed class CatalogWorkspaceControl : UserControl
         var endpoint = Field("АДРЕС MCP-СЕРВЕРА (для HTTP)", existing?.Endpoint ?? "");
         var command = Field("КОМАНДА ЗАПУСКА (для STDIO)", existing?.Command ?? template?.Command ?? "npx");
         var args = Field("АРГУМЕНТЫ КОМАНДЫ (для STDIO)", existing?.Arguments ?? template?.Arguments ?? "", true);
-        var envName = Field("ИМЯ СЕКРЕТНОЙ ПЕРЕМЕННОЙ (необязательно)", "", false);
+        var savedEnvironmentName = (existing?.EnvironmentVariables ?? "")
+            .Split(new[] { '\\r', '\\n' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(line => line.Split('=', 2)[0].Trim())
+            .FirstOrDefault();
+        var envName = Field("ИМЯ СЕКРЕТНОЙ ПЕРЕМЕННОЙ (необязательно)", savedEnvironmentName ?? "", false);
         var secret = new PasswordBox { Padding = new Thickness(8), Height = 32 };
         panel.Children.Add(new TextBlock { Text = "СЕКРЕТ / ТОКЕН (необязательно)", Foreground = Brush("#16C8F5"), FontSize = 10, Margin = new Thickness(0, 8, 0, 4) });
         panel.Children.Add(secret);
