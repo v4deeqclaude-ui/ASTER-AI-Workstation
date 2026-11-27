@@ -24,6 +24,8 @@ public sealed class McpServerEntry
     public string Command { get; set; } = "";
     public string Arguments { get; set; } = "";
     public string EnvironmentVariables { get; set; } = "";
+    public string TransportType { get; set; } = "stdio";
+    public string Endpoint { get; set; } = "";
     public bool Enabled { get; set; } = true;
 }
 
@@ -292,11 +294,12 @@ public sealed class CatalogWorkspaceControl : UserControl
 
     private void AddMcpServer(MarketplaceItem? template = null)
     {
+        var existing = template is null ? null : ReadMcpServers().FirstOrDefault(x => string.Equals(x.Name, template.Name, StringComparison.OrdinalIgnoreCase));
         var dialog = new Window
         {
             Title = template is null ? "Добавить MCP-сервер" : "Настроить " + template.Name,
-            Width = 560, Height = 520, WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            ResizeMode = ResizeMode.NoResize, Background = Brush("#111D2A"), Foreground = Brush("#EAF7FC")
+            Width = 580, Height = 650, WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            ResizeMode = ResizeMode.CanResize, Background = Brush("#111D2A"), Foreground = Brush("#EAF7FC")
         };
         var panel = new StackPanel { Margin = new Thickness(20) };
         TextBox Field(string label, string value, bool multi = false)
@@ -306,12 +309,20 @@ public sealed class CatalogWorkspaceControl : UserControl
             panel.Children.Add(box);
             return box;
         }
-        var name = Field("НАЗВАНИЕ", template?.Name ?? "");
-        var command = Field("КОМАНДА ЗАПУСКА", template?.Command ?? "npx");
-        var args = Field("АРГУМЕНТЫ КОМАНДЫ", template?.Arguments ?? "-y <package-name>", true);
+        var name = Field("НАЗВАНИЕ", existing?.Name ?? template?.Name ?? "");
+        panel.Children.Add(new TextBlock { Text = "СПОСОБ ПОДКЛЮЧЕНИЯ", Foreground = Brush("#16C8F5"), FontSize = 10, Margin = new Thickness(0, 8, 0, 4) });
+        var transport = new ComboBox { Height = 34, Padding = new Thickness(6), Background = Brush("#0B1723"), Foreground = Brush("#EAF7FC") };
+        transport.Items.Add(new ComboBoxItem { Content = "Локальный процесс · STDIO", Tag = "stdio" });
+        transport.Items.Add(new ComboBoxItem { Content = "Удалённый сервер · Streamable HTTP", Tag = "streamable-http" });
+        var selectedTransport = existing?.TransportType ?? "stdio";
+        transport.SelectedIndex = selectedTransport.Equals("streamable-http", StringComparison.OrdinalIgnoreCase) ? 1 : 0;
+        panel.Children.Add(transport);
+        var endpoint = Field("АДРЕС MCP-СЕРВЕРА (для HTTP)", existing?.Endpoint ?? "");
+        var command = Field("КОМАНДА ЗАПУСКА (для STDIO)", existing?.Command ?? template?.Command ?? "npx");
+        var args = Field("АРГУМЕНТЫ КОМАНДЫ (для STDIO)", existing?.Arguments ?? template?.Arguments ?? "-y <package-name>", true);
         var note = new TextBlock
         {
-            Text = "ASTER запускает выбранную команду MCP только после отдельного подтверждения. Секреты и API-ключи пока не поддерживаются в настройках: не добавляй их в аргументы команды. Для интеграций с авторизацией потребуется безопасное хранилище ключей.",
+            Text = "STDIO запускает локальную программу. Streamable HTTP подключается к URL MCP-сервера и поддерживает JSON/SSE-ответы. Удалённая OAuth-авторизация и защищённое хранилище токенов будут добавлены следующим этапом. Не вставляй секреты в адрес или аргументы.",
             Foreground = Brush("#E6C47A"), TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 12, 0, 12)
         };
         panel.Children.Add(note);
@@ -319,14 +330,34 @@ public sealed class CatalogWorkspaceControl : UserControl
         save.HorizontalAlignment = HorizontalAlignment.Right;
         save.Click += (_, _) =>
         {
-            if (string.IsNullOrWhiteSpace(name.Text) || string.IsNullOrWhiteSpace(command.Text))
+            if (string.IsNullOrWhiteSpace(name.Text))
             {
-                MessageBox.Show(dialog, "Укажи название и команду запуска.");
+                MessageBox.Show(dialog, "Укажи название подключения.");
+                return;
+            }
+            var kind = (transport.SelectedItem as ComboBoxItem)?.Tag?.ToString() ?? "stdio";
+            if (kind == "streamable-http" && string.IsNullOrWhiteSpace(endpoint.Text))
+            {
+                MessageBox.Show(dialog, "Укажи адрес удалённого MCP-сервера.");
+                return;
+            }
+            if (kind == "stdio" && string.IsNullOrWhiteSpace(command.Text))
+            {
+                MessageBox.Show(dialog, "Укажи команду запуска локального MCP-сервера.");
                 return;
             }
             var servers = ReadMcpServers();
             servers.RemoveAll(x => string.Equals(x.Name, name.Text.Trim(), StringComparison.OrdinalIgnoreCase));
-            servers.Add(new McpServerEntry { Name = name.Text.Trim(), Command = command.Text.Trim(), Arguments = args.Text.Trim(), EnvironmentVariables = "", Enabled = true });
+            servers.Add(new McpServerEntry
+            {
+                Name = name.Text.Trim(),
+                Command = command.Text.Trim(),
+                Arguments = args.Text.Trim(),
+                Endpoint = endpoint.Text.Trim(),
+                TransportType = kind,
+                EnvironmentVariables = existing?.EnvironmentVariables ?? "",
+                Enabled = true
+            });
             WriteMcpServers(servers);
             dialog.DialogResult = true;
             dialog.Close();
