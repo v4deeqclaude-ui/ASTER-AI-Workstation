@@ -326,6 +326,16 @@ public sealed class CatalogWorkspaceControl : UserControl
         var endpoint = Field("АДРЕС MCP-СЕРВЕРА (для HTTP)", existing?.Endpoint ?? "");
         var command = Field("КОМАНДА ЗАПУСКА (для STDIO)", existing?.Command ?? template?.Command ?? "npx");
         var args = Field("АРГУМЕНТЫ КОМАНДЫ (для STDIO)", existing?.Arguments ?? template?.Arguments ?? "", true);
+        var envName = Field("ИМЯ СЕКРЕТНОЙ ПЕРЕМЕННОЙ (необязательно)", "", false);
+        var secret = new PasswordBox { Padding = new Thickness(8), Height = 32 };
+        panel.Children.Add(new TextBlock { Text = "СЕКРЕТ / ТОКЕН (необязательно)", Foreground = Brush("#16C8F5"), FontSize = 10, Margin = new Thickness(0, 8, 0, 4) });
+        panel.Children.Add(secret);
+        var secretNote = new TextBlock
+        {
+            Text = "Новый секрет будет сохранён в Windows Credential Manager текущего пользователя. В конфигурации ASTER останется только ссылка на него. Для GitHub укажи имя переменной, которую ожидает выбранный MCP-сервер.",
+            Foreground = Brush("#91A7B5"), TextWrapping = TextWrapping.Wrap, FontSize = 10, Margin = new Thickness(0, 6, 0, 4)
+        };
+        panel.Children.Add(secretNote);
         var note = new TextBlock
         {
             Text = "STDIO запускает локальную программу. Streamable HTTP подключается к URL MCP-сервера и поддерживает JSON/SSE-ответы. Удалённая OAuth-авторизация и защищённое хранилище токенов будут добавлены следующим этапом. Не вставляй секреты в адрес или аргументы.",
@@ -352,6 +362,24 @@ public sealed class CatalogWorkspaceControl : UserControl
                 MessageBox.Show(dialog, "Укажи команду запуска локального MCP-сервера.");
                 return;
             }
+            var environmentVariables = existing?.EnvironmentVariables ?? "";
+            if (!string.IsNullOrEmpty(secret.Password))
+            {
+                try
+                {
+                    var target = McpSecretStore.Save(name.Text.Trim(), envName.Text.Trim(), secret.Password);
+                    var lines = environmentVariables.Split(new[] { '\\r', '\\n' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Where(line => !line.StartsWith(envName.Text.Trim() + "=", StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                    lines.Add(envName.Text.Trim() + "=@ASTER_CREDENTIAL:" + target);
+                    environmentVariables = string.Join(Environment.NewLine, lines);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(dialog, "Не удалось безопасно сохранить секрет.\n\n" + ex.Message, "ASTER · Credential Manager", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+            }
             var servers = ReadMcpServers();
             servers.RemoveAll(x => string.Equals(x.Name, name.Text.Trim(), StringComparison.OrdinalIgnoreCase));
             servers.Add(new McpServerEntry
@@ -361,7 +389,7 @@ public sealed class CatalogWorkspaceControl : UserControl
                 Arguments = args.Text.Trim(),
                 Endpoint = endpoint.Text.Trim(),
                 TransportType = kind,
-                EnvironmentVariables = existing?.EnvironmentVariables ?? "",
+                EnvironmentVariables = environmentVariables,
                 Enabled = true
             });
             WriteMcpServers(servers);
