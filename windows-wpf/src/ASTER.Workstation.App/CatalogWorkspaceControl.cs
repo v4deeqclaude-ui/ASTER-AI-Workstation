@@ -580,7 +580,10 @@ public sealed class CatalogWorkspaceControl : UserControl
         var body = new StackPanel();
         body.Children.Add(new TextBlock { Text = server.Name, Foreground = Brush("#EAF7FC"), FontSize = 15, FontWeight = FontWeights.SemiBold });
         body.Children.Add(new TextBlock { Text = server.Enabled ? "КОНФИГУРАЦИЯ СОХРАНЕНА · НЕ ПОДКЛЮЧЁН" : "ОТКЛЮЧЁН", Foreground = Brush("#E6C47A"), FontSize = 9, Margin = new Thickness(0, 4, 0, 0) });
-        body.Children.Add(new TextBlock { Text = server.Command + " " + server.Arguments, Foreground = Brush("#91A7B5"), FontSize = 10, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 5, 0, 0) });
+        var transportLabel = string.Equals(server.TransportType, "streamable-http", StringComparison.OrdinalIgnoreCase)
+            ? "STREAMABLE HTTP · " + server.Endpoint
+            : "STDIO · " + server.Command + " " + server.Arguments;
+        body.Children.Add(new TextBlock { Text = transportLabel, Foreground = Brush("#91A7B5"), FontSize = 10, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 5, 0, 0) });
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 8, 0, 0) };
         var test = SecondaryButton("Проверить");
         test.Click += async (_, _) =>
