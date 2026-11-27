@@ -11,6 +11,9 @@ on:
     paths:
       - 'windows-wpf/**'
       - '.github/workflows/build-wpf.yml'
+  pull_request:
+    branches:
+      - fix/aster-oauth-diagnostics-2026-11
   workflow_dispatch:
 
 permissions:
