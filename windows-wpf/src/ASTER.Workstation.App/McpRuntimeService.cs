@@ -120,6 +120,14 @@ internal static class McpRuntimeService
 
     public static async Task<IReadOnlyList<JsonObject>> ListToolsAsync(McpServerEntry server, CancellationToken cancellationToken = default)
     {
+        if (string.Equals(server.TransportType, "streamable-http", StringComparison.OrdinalIgnoreCase))
+        {
+            await using var http = new McpStreamableHttpClient(server.Endpoint);
+            await http.InitializeAsync(cancellationToken);
+            var httpResult = await http.RequestAsync("tools/list", new JsonObject(), cancellationToken);
+            var httpList = httpResult["tools"] as JsonArray ?? new JsonArray();
+            return httpList.OfType<JsonObject>().Select(x => (JsonObject)x.DeepClone()).ToList();
+        }
         await using var session = await McpSession.StartAsync(server, cancellationToken);
         var result = await session.RequestAsync("tools/list", new JsonObject(), cancellationToken);
         var list = result["tools"] as JsonArray ?? new JsonArray();
@@ -128,6 +136,17 @@ internal static class McpRuntimeService
 
     private static async Task<string> CallToolAsync(McpServerEntry server, string toolName, JsonObject arguments, CancellationToken cancellationToken)
     {
+        if (string.Equals(server.TransportType, "streamable-http", StringComparison.OrdinalIgnoreCase))
+        {
+            await using var http = new McpStreamableHttpClient(server.Endpoint);
+            await http.InitializeAsync(cancellationToken);
+            var httpResult = await http.RequestAsync("tools/call", new JsonObject
+            {
+                ["name"] = toolName,
+                ["arguments"] = arguments.DeepClone()
+            }, cancellationToken);
+            return httpResult.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+        }
         await using var session = await McpSession.StartAsync(server, cancellationToken);
         var result = await session.RequestAsync("tools/call", new JsonObject
         {
@@ -180,7 +199,7 @@ internal static class McpRuntimeService
             {
                 await session.RequestAsync("initialize", new JsonObject
                 {
-                    ["protocolVersion"] = "2024-11-05",
+                    ["protocolVersion"] = "2025-11-25",
                     ["capabilities"] = new JsonObject(),
                     ["clientInfo"] = new JsonObject { ["name"] = "ASTER", ["version"] = "0.5" }
                 }, cancellationToken);
