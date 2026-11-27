@@ -71,6 +71,8 @@ public sealed class EncryptedFilePairingStore : IPairingStore
         try
         {
             var records = await ReadAllAsync(cancellationToken);
+            foreach (var expiredId in records.Where(pair => pair.Value.ExpiresAtUtc <= DateTimeOffset.UtcNow).Select(pair => pair.Key).ToArray())
+                records.Remove(expiredId);
             records[record.Id] = record;
             await WriteAllAsync(records, cancellationToken);
         }
