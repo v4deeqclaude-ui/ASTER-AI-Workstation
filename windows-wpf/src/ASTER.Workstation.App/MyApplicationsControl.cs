@@ -127,13 +127,13 @@ public sealed class MyApplicationsControl : UserControl
             panel.Children.Add(combo);
             panel.Children.Add(new TextBlock { Text = "Если сервер ещё не настроен, оставь поле пустым и добавь его позже в PLUGIN → MCP-серверы.", Foreground = Brush("#91A7B5"), TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0,0,0,14) });
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
-            var skip = new Button { Content = "Без подключения", Padding = new Thickness(10,7), Margin = new Thickness(0,0,8,0) };
-            var connect = new Button { Content = "Сохранить", Padding = new Thickness(12,7), Background = Brush("#16C8F5"), Foreground = Brush("#06131C") };
+            var skip = new Button { Content = "Без подключения", Padding = new Thickness(10,7,10,7), Margin = new Thickness(0,0,8,0) };
+            var connect = new Button { Content = "Сохранить", Padding = new Thickness(12,7,12,7), Background = Brush("#16C8F5"), Foreground = Brush("#06131C") };
             skip.Click += (_, _) => { entry.McpServerName = ""; dialogWindow.DialogResult = true; };
             connect.Click += (_, _) => { entry.McpServerName = combo.SelectedItem as string ?? ""; dialogWindow.DialogResult = true; };
             buttons.Children.Add(skip); buttons.Children.Add(connect); panel.Children.Add(buttons);
             dialogWindow.Content = panel;
-            if (dialogWindow.ShowDialog(Window.GetWindow(this)) != true) return;
+            if (ShowOwnedDialog(dialogWindow) != true) return;
         }
 
         apps.Add(entry);
@@ -225,10 +225,10 @@ public sealed class MyApplicationsControl : UserControl
         panel.Children.Add(new TextBlock { Text = $"Выбери MCP-сервер с инструментами для «{app.Name}».", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0,0,0,12) });
         var combo = new ComboBox { ItemsSource = servers, SelectedItem = servers.Contains(app.McpServerName) ? app.McpServerName : servers[0], Padding = new Thickness(8), Margin = new Thickness(0,0,0,12) };
         panel.Children.Add(combo);
-        var save = new Button { Content = "Подключить", HorizontalAlignment = HorizontalAlignment.Right, Padding = new Thickness(12,7), Background = Brush("#16C8F5"), Foreground = Brush("#06131C") };
+        var save = new Button { Content = "Подключить", HorizontalAlignment = HorizontalAlignment.Right, Padding = new Thickness(12,7,12,7), Background = Brush("#16C8F5"), Foreground = Brush("#06131C") };
         save.Click += (_, _) => { app.McpServerName = combo.SelectedItem as string ?? ""; var apps = ReadApps(); var current = apps.FirstOrDefault(x => string.Equals(x.ExecutablePath, app.ExecutablePath, StringComparison.OrdinalIgnoreCase)); if (current is not null) current.McpServerName = app.McpServerName; SaveApps(apps); dialog.DialogResult = true; };
         panel.Children.Add(save); dialog.Content = panel;
-        if (dialog.ShowDialog(Window.GetWindow(this)) == true) Refresh();
+        if (ShowOwnedDialog(dialog) == true) Refresh();
     }
 
     private void Remove(DesktopApplicationEntry app)
