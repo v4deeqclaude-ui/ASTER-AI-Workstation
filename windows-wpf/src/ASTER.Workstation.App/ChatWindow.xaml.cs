@@ -193,6 +193,15 @@ public partial class ChatWindow : UserControl
             string answer;
             if (configuredServers.Any(x => x.Enabled))
             {
+                var serverNames = string.Join("\n", configuredServers.Where(x => x.Enabled).Select(x => "• " + x.Name + " — " + x.Command));
+                var launchApproved = MessageBox.Show(
+                    Window.GetWindow(this),
+                    "Для этого запроса ASTER запустит внешние MCP-программы:\n\n" + serverNames + "\n\nЗапускать их сейчас? Запускаемые программы могут выполнять действия в пределах выданных им прав.",
+                    "Подтверждение запуска MCP-серверов",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning) == MessageBoxResult.Yes;
+                if (!launchApproved)
+                    throw new OperationCanceledException("Запуск MCP-серверов отменён пользователем.");
                 StatusText.Text = "ASTER подключает MCP-инструменты…";
                 answer = await McpRuntimeService.SendWithToolsAsync(
                     settings.OllamaEndpoint,
