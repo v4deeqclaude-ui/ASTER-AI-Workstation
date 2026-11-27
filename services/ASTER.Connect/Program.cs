@@ -64,7 +64,7 @@ app.MapGet("/api/github/status", (IConfiguration configuration) =>
         repositoryAccessAvailable = false,
         reason = configured
             ? "GitHub App installation can be started. Repository access is not enabled until installation verification and encrypted token storage are implemented."
-            : "ASTER Connect is waiting for GitHubApp:Slug.",
+            : "ASTER Connect requires the GitHub App slug, a public HTTPS URL, and a persistent Data Protection key-ring path.",
         requiredPermissions = new[] { "Metadata: read-only", "Contents: read-only" }
     });
 });
