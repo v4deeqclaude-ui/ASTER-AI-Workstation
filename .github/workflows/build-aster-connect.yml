@@ -1,0 +1,36 @@
+name: Build ASTER Connect
+
+on:
+  push:
+    branches:
+      - feature/aster-v07-github-app-connect
+    paths:
+      - 'services/ASTER.Connect/**'
+      - '.github/workflows/build-aster-connect.yml'
+  pull_request:
+    branches:
+      - feature/aster-v07-github-app-connect
+    paths:
+      - 'services/ASTER.Connect/**'
+      - '.github/workflows/build-aster-connect.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ASTER
+        uses: actions/checkout@v4
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Restore
+        run: dotnet restore services/ASTER.Connect/ASTER.Connect.csproj
+      - name: Build
+        run: dotnet build services/ASTER.Connect/ASTER.Connect.csproj --configuration Release --no-restore
+      - name: Publish
+        run: dotnet publish services/ASTER.Connect/ASTER.Connect.csproj --configuration Release --no-build --output artifacts/aster-connect
