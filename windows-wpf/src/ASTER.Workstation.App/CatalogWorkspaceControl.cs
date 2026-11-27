@@ -139,6 +139,12 @@ public sealed class CatalogWorkspaceControl : UserControl
     {
         var button = SecondaryButton(title);
         button.Margin = new Thickness(0, 0, 8, 0);
+        if (_activePluginTab == key)
+        {
+            button.Background = Brush("#16445B");
+            button.BorderBrush = Brush("#16C8F5");
+            button.Foreground = Brush("#A8F1FF");
+        }
         button.Click += (_, _) => { _activePluginTab = key; RefreshPluginView(); };
         Grid.SetColumn(button, column);
         toolbar.Children.Add(button);
@@ -150,6 +156,11 @@ public sealed class CatalogWorkspaceControl : UserControl
         _count.Foreground = Brush("#91A7B5");
         _count.Margin = new Thickness(14, 0, 0, 0);
         actions.Children.Add(_count);
+        if (actions is Grid grid)
+        {
+            Grid.SetColumn(_count, 3);
+            _count.HorizontalAlignment = HorizontalAlignment.Left;
+        }
     }
 
     private void AddItemsArea(Grid root)
