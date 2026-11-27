@@ -22,11 +22,6 @@
         <Grid Grid.Row="1" ClipToBounds="True">
             <Border Background="#061522" BorderBrush="#17415D"
                     BorderThickness="1" CornerRadius="14" Opacity="0.42"/>
-            <Image x:Name="HeroImage" Width="320" Height="480"
-                   HorizontalAlignment="Right" VerticalAlignment="Center"
-                   Stretch="Fill" IsHitTestVisible="False"
-                   Opacity="0.36" Margin="0,0,8,0"
-                   RenderOptions.BitmapScalingMode="Fant"/>
             <ListBox x:Name="MessagesList"
                      Background="Transparent" BorderThickness="0"
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -50,18 +45,14 @@
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Border Background="#6610283A" BorderBrush="#661C5877"
-                                BorderThickness="1" CornerRadius="11"
-                                Padding="12" Margin="0,7,0,7"
-                                HorizontalAlignment="Left" MaxWidth="820">
-                            <StackPanel>
-                                <TextBlock Text="{Binding Author}" FontSize="10"
-                                           Foreground="#9BBCCB" FontWeight="SemiBold"/>
-                                <TextBlock Text="{Binding Content}" TextWrapping="Wrap"
-                                           FontSize="14" LineHeight="21" Margin="0,4,0,0"
-                                           Foreground="#EAF7FC"/>
-                            </StackPanel>
-                        </Border>
+                        <StackPanel Margin="0,10,0,10"
+                                    HorizontalAlignment="Left" MaxWidth="820">
+                            <TextBlock Text="{Binding Author}" FontSize="10"
+                                       Foreground="#9BBCCB" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding Content}" TextWrapping="Wrap"
+                                       FontSize="14" LineHeight="21" Margin="0,3,0,0"
+                                       Foreground="#EAF7FC"/>
+                        </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
