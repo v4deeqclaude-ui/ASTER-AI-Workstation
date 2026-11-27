@@ -61,6 +61,23 @@ public sealed class EncryptedFilePairingStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task CompletionCode_ConcurrentRedemption_AllowsExactlyOneWinner()
+    {
+        var now = DateTimeOffset.UtcNow;
+        await SavePendingAsync("pair-race", now);
+        Assert.True(await _store.TryMarkInstalledAsync("pair-race", 13579, now.AddMinutes(1)));
+        var code = await _store.TryIssueCompletionCodeAsync("pair-race", now.AddMinutes(1));
+        Assert.NotNull(code);
+
+        var attempts = Enumerable.Range(0, 20)
+            .Select(_ => _store.TryRedeemCompletionCodeAsync("pair-race", code!, now.AddMinutes(2)));
+        var results = await Task.WhenAll(attempts);
+
+        Assert.Single(results.Where(value => value == 13579));
+        Assert.Equal(19, results.Count(value => value is null));
+    }
+
+    [Fact]
     public async Task CompletionCode_RejectsExpiredCode()
     {
         var now = DateTimeOffset.UtcNow;
