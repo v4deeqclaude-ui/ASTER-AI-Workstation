@@ -18,6 +18,7 @@ Set the following environment variables in the hosting provider:
 
 - `GitHubApp__Slug` — slug of the ASTER-owned GitHub App.
 - `PublicBaseUrl` — public HTTPS origin of this service (for example, the Railway-provided domain).
+- `DataProtection__KeyRingPath` — path on a persistent private volume for ASP.NET Core Data Protection keys (for example, `/data/aster-key-ring`). The service refuses to start the GitHub installation flow unless this is configured.
 
 Configure the GitHub App setup URL/callback to:
 `https://YOUR-ASTER-CONNECT-DOMAIN/api/github/callback`
@@ -34,7 +35,7 @@ The GitHub App should initially request only read-only repository metadata and c
 - No private key, client secret, or installation token is included in the desktop app or source control.
 - The callback deliberately does not claim that a repository connection is complete.
 
-For production multi-instance hosting, persist and protect the ASP.NET Core Data Protection key ring using a durable private store before enabling OAuth/token exchange. Do not scale this service horizontally until that is configured.
+The GitHub installation flow requires a persistent private volume for the Data Protection key ring. Mount a durable Railway volume at `/data` and set `DataProtection__KeyRingPath=/data/aster-key-ring`. Without this, `/health/ready` remains unavailable and `/api/github/connect` refuses to start. For multi-instance hosting, all instances must share the same protected key ring; do not scale horizontally until that is configured.
 
 ## Deployment
 
