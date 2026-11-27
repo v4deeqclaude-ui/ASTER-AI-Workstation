@@ -338,7 +338,7 @@ public sealed class CatalogWorkspaceControl : UserControl
         panel.Children.Add(secretNote);
         var note = new TextBlock
         {
-            Text = "STDIO запускает локальную программу. Streamable HTTP подключается к URL MCP-сервера и поддерживает JSON/SSE-ответы. Удалённая OAuth-авторизация и защищённое хранилище токенов будут добавлены следующим этапом. Не вставляй секреты в адрес или аргументы.",
+            Text = "STDIO запускает локальную программу. Streamable HTTP подключается к URL MCP-сервера и поддерживает JSON/SSE-ответы. Секрет STDIO можно сохранить отдельно в Windows Credential Manager. OAuth для удалённых HTTP-серверов пока не реализован. Не вставляй секреты в адрес или аргументы.",
             Foreground = Brush("#E6C47A"), TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 12, 0, 12)
         };
         panel.Children.Add(note);
@@ -368,7 +368,7 @@ public sealed class CatalogWorkspaceControl : UserControl
                 try
                 {
                     var target = McpSecretStore.Save(name.Text.Trim(), envName.Text.Trim(), secret.Password);
-                    var lines = environmentVariables.Split(new[] { '\\r', '\\n' }, StringSplitOptions.RemoveEmptyEntries)
+                    var lines = environmentVariables.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
                         .Where(line => !line.StartsWith(envName.Text.Trim() + "=", StringComparison.OrdinalIgnoreCase))
                         .ToList();
                     lines.Add(envName.Text.Trim() + "=@ASTER_CREDENTIAL:" + target);
