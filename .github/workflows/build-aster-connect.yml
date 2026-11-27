@@ -32,5 +32,14 @@ jobs:
         run: dotnet restore services/ASTER.Connect/ASTER.Connect.csproj
       - name: Build
         run: dotnet build services/ASTER.Connect/ASTER.Connect.csproj --configuration Release --no-restore
-      - name: Publish
-        run: dotnet publish services/ASTER.Connect/ASTER.Connect.csproj --configuration Release --no-build --output artifacts/aster-connect
+      - name: Publish self-contained Windows x64
+        run: dotnet publish services/ASTER.Connect/ASTER.Connect.csproj --configuration Release --runtime win-x64 --self-contained true --output artifacts/aster-connect-win-x64
+      - name: Verify executable is present
+        run: test -s artifacts/aster-connect-win-x64/ASTER.Connect.exe
+      - name: Upload ASTER Connect Windows x64
+        uses: actions/upload-artifact@v4
+        with:
+          name: ASTER-Connect-0.7-win-x64-self-contained
+          path: artifacts/aster-connect-win-x64/
+          if-no-files-found: error
+          retention-days: 14
