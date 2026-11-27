@@ -384,6 +384,15 @@ public sealed class CatalogWorkspaceControl : UserControl
                 MessageBox.Show(dialog, "Укажи команду запуска локального MCP-сервера.");
                 return;
             }
+            var hasSavedGitHubToken = (existing?.EnvironmentVariables ?? "")
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Any(line => line.StartsWith("GITHUB_PERSONAL_ACCESS_TOKEN=", StringComparison.OrdinalIgnoreCase));
+            if (string.Equals(name.Text.Trim(), "GitHub", StringComparison.OrdinalIgnoreCase) &&
+                string.IsNullOrEmpty(secret.Password) && !hasSavedGitHubToken)
+            {
+                MessageBox.Show(dialog, "Для локального GitHub MCP Server пока нужен Personal Access Token. Введи токен в поле секрета — он сохранится в Windows Credential Manager.", "GitHub · авторизация", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
             var environmentVariables = existing?.EnvironmentVariables ?? "";
             try
             {
