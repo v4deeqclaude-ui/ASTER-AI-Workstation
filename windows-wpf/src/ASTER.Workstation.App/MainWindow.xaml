@@ -10,24 +10,25 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
-        <Border Grid.Column="0" Background="#0D1722" BorderBrush="#193042" BorderThickness="0,0,1,0">
+        <Border Grid.Column="0" Background="#0B1623" BorderBrush="#1B3A50" BorderThickness="0,0,1,0">
             <DockPanel Margin="17,20,17,16">
                 <StackPanel DockPanel.Dock="Top">
                     <TextBlock Text="✦ ASTER" FontSize="27" FontWeight="Bold" Foreground="#16C8F5" />
                     <TextBlock Text="AI WORKSTATION" FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="1,0,0,27" />
                     <TextBlock Text="РАБОЧЕЕ ПРОСТРАНСТВО" FontSize="9" Foreground="{StaticResource MutedBrush}" Margin="7,0,0,9" />
-                    <Button Content="⌂   Главная" HorizontalContentAlignment="Left" Background="#29313D" BorderThickness="0" Margin="0,0,0,5" Click="Home_Click" />
-                    <Button Content="◇   PLUGIN" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Plugin_Click" />
-                    <Button Content="✦   SKILL" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Skill_Click" />
-                    <Border Height="1" Background="#2A313B" Margin="4,9,4,9" />
-                    <Button Content="▣   ФОТО" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Photo_Click" />
-                    <Button Content="▧   ВИДЕО" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Video_Click" />
-                    <Button Content="◇   ПРИЛОЖЕНИЯ" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Applications_Click" />
-                    <Button Content="♫   МУЗЫКА" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Music_Click" />
+                    <Button x:Name="NavHome" Content="⌂   Главная" HorizontalContentAlignment="Left" Background="#29313D" BorderThickness="0" Margin="0,0,0,5" Click="Home_Click" />
+                    <Button x:Name="NavProjects" Content="▦   Проекты" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Projects_Click" />
+                    <Button x:Name="NavPlugin" Content="◇   PLUGIN" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Plugin_Click" />
+                    <Button x:Name="NavSkill" Content="✦   SKILL" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Skill_Click" />
+                    <Border Height="1" Background="#24465D" Margin="4,9,4,9" />
+                    <Button x:Name="NavPhoto" Content="▣   ФОТО" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Photo_Click" />
+                    <Button x:Name="NavVideo" Content="▧   ВИДЕО" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Video_Click" />
+                    <Button x:Name="NavApplications" Content="◇   ПРИЛОЖЕНИЯ" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Applications_Click" />
+                    <Button x:Name="NavMusic" Content="♫   МУЗЫКА" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Music_Click" />
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Bottom">
                     <Border Height="1" Background="#2A313B" Margin="0,0,0,13" />
-                    <Button Content="⚙   Настройки" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Click="Settings_Click" />
+                    <Button x:Name="NavSettings" Content="⚙   Настройки" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Click="Settings_Click" />
                     <TextBlock Text="NEON FUTURE · LOCAL" FontSize="9" Foreground="{StaticResource MutedBrush}" Margin="8,18,0,0" />
                 </StackPanel>
             </DockPanel>
@@ -54,7 +55,7 @@
                 </Border>
             </Grid>
 
-            <Border Grid.Row="1" Background="#1C222B" BorderBrush="#303946" BorderThickness="1" CornerRadius="12" Padding="17" Margin="0,0,0,18">
+            <Border Grid.Row="1" Background="#102235" BorderBrush="#24516A" BorderThickness="1" CornerRadius="16" Padding="17" Margin="0,0,0,18">
                 <Grid>
                     <StackPanel>
                         <TextBlock Text="ТВОИ ПРОЕКТЫ" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold" />
@@ -71,7 +72,7 @@
                     <ColumnDefinition Width="18" />
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-                <Border Grid.Column="0" Background="{StaticResource PanelBrush}" BorderBrush="#2A323D" BorderThickness="1" CornerRadius="11" Padding="13">
+                <Border Grid.Column="0" Background="#101F2D" BorderBrush="#24465D" BorderThickness="1" CornerRadius="16" Padding="13">
                     <DockPanel>
                         <StackPanel DockPanel.Dock="Top" Margin="2,0,2,10">
                             <Grid>
@@ -107,7 +108,7 @@
                             <TextBlock x:Name="SelectedProjectName" Text="Проект не выбран" FontSize="17" FontWeight="SemiBold" />
                             <TextBlock x:Name="SelectedProjectPath" Text="Добавь проект, чтобы просмотреть его папки и файлы." Foreground="{StaticResource MutedBrush}" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,5,0,0" />
                         </StackPanel>
-                        <Border Grid.Row="1" Height="1" Background="#2A323D" Margin="0,15,0,12" />
+                        <Border Grid.Row="1" Height="1" Background="#24465D" Margin="0,15,0,12" />
                         <Grid Grid.Row="2">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
