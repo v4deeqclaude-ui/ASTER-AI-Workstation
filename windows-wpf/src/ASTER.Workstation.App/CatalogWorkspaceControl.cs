@@ -325,7 +325,7 @@ public sealed class CatalogWorkspaceControl : UserControl
         panel.Children.Add(transport);
         var endpoint = Field("АДРЕС MCP-СЕРВЕРА (для HTTP)", existing?.Endpoint ?? "");
         var command = Field("КОМАНДА ЗАПУСКА (для STDIO)", existing?.Command ?? template?.Command ?? "npx");
-        var args = Field("АРГУМЕНТЫ КОМАНДЫ (для STDIO)", existing?.Arguments ?? template?.Arguments ?? "-y <package-name>", true);
+        var args = Field("АРГУМЕНТЫ КОМАНДЫ (для STDIO)", existing?.Arguments ?? template?.Arguments ?? "", true);
         var note = new TextBlock
         {
             Text = "STDIO запускает локальную программу. Streamable HTTP подключается к URL MCP-сервера и поддерживает JSON/SSE-ответы. Удалённая OAuth-авторизация и защищённое хранилище токенов будут добавлены следующим этапом. Не вставляй секреты в адрес или аргументы.",
@@ -486,7 +486,7 @@ public sealed class CatalogWorkspaceControl : UserControl
             }
             else
             {
-                AddMcpServer(new MarketplaceItem(name, "APP INTEGRATION", description, "npx", "-y <проверенный-пакет-MCP>", name));
+                AddMcpServer(new MarketplaceItem(name, "APP INTEGRATION", description, "", "", name));
             }
         };
         buttons.Children.Add(configure);
