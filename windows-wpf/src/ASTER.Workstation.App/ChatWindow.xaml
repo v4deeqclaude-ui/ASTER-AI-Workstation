@@ -82,6 +82,60 @@
                                 HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Grid>
                 </Button>
+                <Popup x:Name="AddPopup" PlacementTarget="{Binding ElementName=AttachButton}"
+                       Placement="Top" StaysOpen="False" AllowsTransparency="True"
+                       PopupAnimation="Fade" VerticalOffset="-8">
+                    <Border Width="390" Background="#0B1B2B" BorderBrush="#168AB5"
+                            BorderThickness="1" CornerRadius="14" Padding="12">
+                        <StackPanel>
+                            <TextBlock Text="ДОБАВИТЬ В ASTER" Foreground="#16C8F5"
+                                       FontSize="10" FontWeight="SemiBold" Margin="4,2,4,10"/>
+                            <UniformGrid Columns="2" Margin="0,0,0,10">
+                                <Button Content="Приложения" Tag="apps" Click="AddPopupTab_Click"
+                                        Margin="3" Padding="10,8" Background="#16445B"
+                                        Foreground="#A8F1FF" BorderBrush="#16C8F5"/>
+                                <Button Content="Файлы и материалы" Tag="files" Click="AddPopupTab_Click"
+                                        Margin="3" Padding="10,8" Background="#142A3A"
+                                        Foreground="#C8E5F0" BorderBrush="#29495D"/>
+                            </UniformGrid>
+                            <UniformGrid x:Name="IntegrationIconsPanel" Columns="3">
+                                <Button Tag="GitHub" Click="Integration_Click" Margin="4" Padding="8"
+                                        Background="#12283B" Foreground="#EAF7FC" BorderBrush="#24516A">
+                                    <StackPanel><TextBlock Text="●" FontSize="25" HorizontalAlignment="Center"/><TextBlock Text="GitHub" HorizontalAlignment="Center" Margin="0,4,0,0"/></StackPanel>
+                                </Button>
+                                <Button Tag="Unity" Click="Integration_Click" Margin="4" Padding="8"
+                                        Background="#12283B" Foreground="#EAF7FC" BorderBrush="#24516A">
+                                    <StackPanel><TextBlock Text="⬡" FontSize="25" HorizontalAlignment="Center"/><TextBlock Text="Unity" HorizontalAlignment="Center" Margin="0,4,0,0"/></StackPanel>
+                                </Button>
+                                <Button Tag="Blender" Click="Integration_Click" Margin="4" Padding="8"
+                                        Background="#12283B" Foreground="#EAF7FC" BorderBrush="#24516A">
+                                    <StackPanel><TextBlock Text="◉" FontSize="25" HorizontalAlignment="Center"/><TextBlock Text="Blender" HorizontalAlignment="Center" Margin="0,4,0,0"/></StackPanel>
+                                </Button>
+                                <Button Tag="Visual Studio Code" Click="Integration_Click" Margin="4" Padding="8"
+                                        Background="#12283B" Foreground="#EAF7FC" BorderBrush="#24516A">
+                                    <StackPanel><TextBlock Text="〈/〉" FontSize="20" HorizontalAlignment="Center"/><TextBlock Text="VS Code" HorizontalAlignment="Center" Margin="0,4,0,0"/></StackPanel>
+                                </Button>
+                                <Button Tag="Google Drive" Click="Integration_Click" Margin="4" Padding="8"
+                                        Background="#12283B" Foreground="#EAF7FC" BorderBrush="#24516A">
+                                    <StackPanel><TextBlock Text="▲" FontSize="25" HorizontalAlignment="Center"/><TextBlock Text="Drive" HorizontalAlignment="Center" Margin="0,4,0,0"/></StackPanel>
+                                </Button>
+                                <Button Tag="Notion" Click="Integration_Click" Margin="4" Padding="8"
+                                        Background="#12283B" Foreground="#EAF7FC" BorderBrush="#24516A">
+                                    <StackPanel><TextBlock Text="N" FontSize="25" FontWeight="Bold" HorizontalAlignment="Center"/><TextBlock Text="Notion" HorizontalAlignment="Center" Margin="0,4,0,0"/></StackPanel>
+                                </Button>
+                            </UniformGrid>
+                            <StackPanel x:Name="AttachmentOptionsPanel" Visibility="Collapsed">
+                                <Button Content="📎  Файлы" Click="PopupAddFiles_Click" Margin="3" Padding="9" Background="#12283B" Foreground="#EAF7FC" BorderBrush="#24516A"/>
+                                <Button Content="🖼  Изображения" Click="PopupAddImages_Click" Margin="3" Padding="9" Background="#12283B" Foreground="#EAF7FC" BorderBrush="#24516A"/>
+                                <Button Content="💻  Исходный код" Click="PopupAddCode_Click" Margin="3" Padding="9" Background="#12283B" Foreground="#EAF7FC" BorderBrush="#24516A"/>
+                                <Button Content="📁  Папка" Click="PopupAddFolder_Click" Margin="3" Padding="9" Background="#12283B" Foreground="#EAF7FC" BorderBrush="#24516A"/>
+                                <Button Content="Очистить вложения" Click="PopupClearAttachments_Click" Margin="3" Padding="9" Background="#12283B" Foreground="#EAF7FC" BorderBrush="#24516A"/>
+                            </StackPanel>
+                            <TextBlock Text="Выбери приложение, чтобы открыть его настройки в каталоге Plugin."
+                                       Foreground="#91A7B5" FontSize="10" TextWrapping="Wrap" Margin="4,9,4,0"/>
+                        </StackPanel>
+                    </Border>
+                </Popup>
                 <Border Grid.Column="1" Background="#0E2639" BorderBrush="#1E7196"
                         BorderThickness="1" CornerRadius="14" Padding="5">
                     <TextBox x:Name="MessageInput" MinHeight="42" MaxHeight="110"

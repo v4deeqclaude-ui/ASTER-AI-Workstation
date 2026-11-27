@@ -20,6 +20,7 @@ on:
       - feature/aster-workspace-hierarchy-v2
       - feature/aster-v04-deep-space
       - feature/aster-v05-plugin-marketplace
+      - feature/aster-v06-mcp-transports
   workflow_dispatch:
 
 permissions:

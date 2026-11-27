@@ -27,6 +27,9 @@ public sealed class McpServerEntry
     public string TransportType { get; set; } = "stdio";
     public string Endpoint { get; set; } = "";
     public bool Enabled { get; set; } = true;
+    public bool LastCheckSucceeded { get; set; }
+    public DateTime? LastCheckedUtc { get; set; }
+    public int LastToolCount { get; set; }
 }
 
 public sealed class CatalogWorkspaceControl : UserControl
@@ -48,10 +51,14 @@ public sealed class CatalogWorkspaceControl : UserControl
     private readonly string _filePath;
     private readonly string _mcpFilePath;
     private string _activePluginTab = "marketplace";
+    private readonly string? _selectedIntegration;
 
-    public CatalogWorkspaceControl(CatalogKind kind)
+    public CatalogWorkspaceControl(CatalogKind kind, string? selectedIntegration = null)
     {
         _kind = kind;
+        _selectedIntegration = string.IsNullOrWhiteSpace(selectedIntegration) ? null : selectedIntegration.Trim();
+        if (kind == CatalogKind.Plugin && _selectedIntegration is not null)
+            _activePluginTab = "integrations";
         var folder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ASTER", "Catalogs");
         Directory.CreateDirectory(folder);
         _filePath = Path.Combine(folder, kind == CatalogKind.Skill ? "skills.json" : "plugins.json");
@@ -120,17 +127,19 @@ public sealed class CatalogWorkspaceControl : UserControl
         toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        AddTab(toolbar, "Marketplace", "marketplace", 0);
-        AddTab(toolbar, "Мои плагины", "installed", 1);
-        AddTab(toolbar, "MCP-серверы", "mcp", 2);
+        AddTab(toolbar, "Приложения", "integrations", 0);
+        AddTab(toolbar, "Marketplace", "marketplace", 1);
+        AddTab(toolbar, "Мои плагины", "installed", 2);
+        AddTab(toolbar, "MCP-серверы", "mcp", 3);
         var plus = PrimaryButton("+");
         plus.Width = 42;
         plus.FontSize = 20;
         plus.ToolTip = "Добавить плагин или MCP-сервер";
         plus.Click += async (_, _) => { _activePluginTab = "marketplace"; RefreshPluginView(); await LoadRegistryServersAsync(""); };
-        Grid.SetColumn(plus, 4);
+        Grid.SetColumn(plus, 5);
         toolbar.Children.Add(plus);
         ConfigureCount(toolbar);
         Grid.SetRow(toolbar, 1);
@@ -292,6 +301,19 @@ public sealed class CatalogWorkspaceControl : UserControl
         MessageBox.Show(Window.GetWindow(this), "Программа добавлена в список. Сохранён только путь к .exe; это ещё не подключение её функций к ИИ.", "ASTER — PLUGIN", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
+    private static void DeleteMcpSecrets(McpServerEntry server)
+    {
+        const string prefix = "@ASTER_CREDENTIAL:";
+        foreach (var line in (server.EnvironmentVariables ?? "").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            var separator = line.IndexOf('=');
+            if (separator <= 0) continue;
+            var value = line[(separator + 1)..].Trim();
+            if (value.StartsWith(prefix, StringComparison.Ordinal))
+                McpSecretStore.Delete(value[prefix.Length..]);
+        }
+    }
+
     private void AddMcpServer(MarketplaceItem? template = null)
     {
         var existing = template is null ? null : ReadMcpServers().FirstOrDefault(x => string.Equals(x.Name, template.Name, StringComparison.OrdinalIgnoreCase));
@@ -319,10 +341,26 @@ public sealed class CatalogWorkspaceControl : UserControl
         panel.Children.Add(transport);
         var endpoint = Field("АДРЕС MCP-СЕРВЕРА (для HTTP)", existing?.Endpoint ?? "");
         var command = Field("КОМАНДА ЗАПУСКА (для STDIO)", existing?.Command ?? template?.Command ?? "npx");
-        var args = Field("АРГУМЕНТЫ КОМАНДЫ (для STDIO)", existing?.Arguments ?? template?.Arguments ?? "-y <package-name>", true);
+        var args = Field("АРГУМЕНТЫ КОМАНДЫ (для STDIO)", existing?.Arguments ?? template?.Arguments ?? "", true);
+        var savedEnvironmentName = (existing?.EnvironmentVariables ?? "")
+            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(line => line.Split('=', 2)[0].Trim())
+            .FirstOrDefault();
+        var defaultEnvironmentName = string.Equals(template?.Name, "GitHub", StringComparison.OrdinalIgnoreCase)
+            ? "GITHUB_PERSONAL_ACCESS_TOKEN" : "";
+        var envName = Field("ИМЯ СЕКРЕТНОЙ ПЕРЕМЕННОЙ (необязательно)", savedEnvironmentName ?? defaultEnvironmentName, false);
+        var secret = new PasswordBox { Padding = new Thickness(8), Height = 32 };
+        panel.Children.Add(new TextBlock { Text = "СЕКРЕТ / ТОКЕН (необязательно)", Foreground = Brush("#16C8F5"), FontSize = 10, Margin = new Thickness(0, 8, 0, 4) });
+        panel.Children.Add(secret);
+        var secretNote = new TextBlock
+        {
+            Text = "Новый секрет будет сохранён в Windows Credential Manager текущего пользователя. В конфигурации ASTER останется только ссылка на него. Для GitHub укажи имя переменной, которую ожидает выбранный MCP-сервер.",
+            Foreground = Brush("#91A7B5"), TextWrapping = TextWrapping.Wrap, FontSize = 10, Margin = new Thickness(0, 6, 0, 4)
+        };
+        panel.Children.Add(secretNote);
         var note = new TextBlock
         {
-            Text = "STDIO запускает локальную программу. Streamable HTTP подключается к URL MCP-сервера и поддерживает JSON/SSE-ответы. Удалённая OAuth-авторизация и защищённое хранилище токенов будут добавлены следующим этапом. Не вставляй секреты в адрес или аргументы.",
+            Text = "STDIO запускает локальную программу. Streamable HTTP подключается к URL MCP-сервера и поддерживает JSON/SSE-ответы. Секрет STDIO можно сохранить отдельно в Windows Credential Manager. OAuth для удалённых HTTP-серверов пока не реализован. Не вставляй секреты в адрес или аргументы.",
             Foreground = Brush("#E6C47A"), TextWrapping = TextWrapping.Wrap, FontSize = 11, Margin = new Thickness(0, 12, 0, 12)
         };
         panel.Children.Add(note);
@@ -346,6 +384,46 @@ public sealed class CatalogWorkspaceControl : UserControl
                 MessageBox.Show(dialog, "Укажи команду запуска локального MCP-сервера.");
                 return;
             }
+            var hasSavedGitHubToken = (existing?.EnvironmentVariables ?? "")
+                .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                .Any(line => line.StartsWith("GITHUB_PERSONAL_ACCESS_TOKEN=", StringComparison.OrdinalIgnoreCase));
+            if (string.Equals(name.Text.Trim(), "GitHub", StringComparison.OrdinalIgnoreCase) &&
+                string.IsNullOrEmpty(secret.Password) && !hasSavedGitHubToken)
+            {
+                MessageBox.Show(dialog, "Для локального GitHub MCP Server пока нужен Personal Access Token. Введи токен в поле секрета — он сохранится в Windows Credential Manager.", "GitHub · авторизация", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            var environmentVariables = existing?.EnvironmentVariables ?? "";
+            try
+            {
+                var environmentLines = environmentVariables.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                const string credentialPrefix = "@ASTER_CREDENTIAL:";
+                for (var index = 0; index < environmentLines.Count; index++)
+                {
+                    var separator = environmentLines[index].IndexOf('=');
+                    if (separator <= 0) continue;
+                    var variable = environmentLines[index][..separator].Trim();
+                    var value = environmentLines[index][(separator + 1)..].Trim();
+                    if (string.IsNullOrEmpty(value) || value.StartsWith(credentialPrefix, StringComparison.Ordinal)) continue;
+                    var target = McpSecretStore.Save(name.Text.Trim(), variable, value);
+                    environmentLines[index] = variable + "=" + credentialPrefix + target;
+                }
+                environmentVariables = string.Join(Environment.NewLine, environmentLines);
+                if (!string.IsNullOrEmpty(secret.Password))
+                {
+                    var target = McpSecretStore.Save(name.Text.Trim(), envName.Text.Trim(), secret.Password);
+                    var lines = environmentVariables.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                        .Where(line => !line.StartsWith(envName.Text.Trim() + "=", StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                    lines.Add(envName.Text.Trim() + "=" + credentialPrefix + target);
+                    environmentVariables = string.Join(Environment.NewLine, lines);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(dialog, "Не удалось безопасно сохранить секреты.\n\n" + ex.Message, "ASTER · Credential Manager", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
             var servers = ReadMcpServers();
             servers.RemoveAll(x => string.Equals(x.Name, name.Text.Trim(), StringComparison.OrdinalIgnoreCase));
             servers.Add(new McpServerEntry
@@ -355,8 +433,11 @@ public sealed class CatalogWorkspaceControl : UserControl
                 Arguments = args.Text.Trim(),
                 Endpoint = endpoint.Text.Trim(),
                 TransportType = kind,
-                EnvironmentVariables = existing?.EnvironmentVariables ?? "",
-                Enabled = true
+                EnvironmentVariables = environmentVariables,
+                Enabled = true,
+                LastCheckSucceeded = false,
+                LastCheckedUtc = null,
+                LastToolCount = 0
             });
             WriteMcpServers(servers);
             dialog.DialogResult = true;
@@ -409,6 +490,18 @@ public sealed class CatalogWorkspaceControl : UserControl
             if (!_registryLoading && _registryItems.Count == 0)
                 _items.Children.Add(InfoCard("Каталог пока пуст", "Введи поисковый запрос длиной от трёх символов или обнови список."));
         }
+        else if (_activePluginTab == "integrations")
+        {
+            _count.Text = "Каталог приложений";
+            AddSectionTitle("APP INTEGRATIONS", "Подключение приложений");
+            _items.Children.Add(InfoCard("Реальный статус подключений", "Карточки показывают состояние интеграции. Конфигурация MCP сама по себе не означает успешное подключение. Статус изменится только после проверки сервера и получения инструментов."));
+            AddBuiltInIntegrationCard("GitHub", "Репозитории, issues, pull requests и поиск по коду.", "Официальный сервер GitHub MCP. Требования: Docker Desktop должен быть установлен и запущен. В окне настройки ASTER введи GitHub Personal Access Token; ASTER сохранит его в Windows Credential Manager и передаст контейнеру только как переменную окружения. Образ: ghcr.io/github/github-mcp-server. Документация: https://github.com/github/github-mcp-server");
+            AddBuiltInIntegrationCard("Unity", "Работа с открытым Unity Editor: сцены, объекты, компоненты и редакторские задачи.", "Совместимый вариант для Unity 2020.3+: установи Node.js 18+, затем в Unity открой Window → Package Manager → + → Add package from git URL и вставь https://github.com/akiojin/unity-editor-mcp.git?path=UnityEditorMCP/Packages/unity-editor-mcp. Оставь проект открытым. ASTER запускает MCP-пакет командой npx. Документация: https://github.com/akiojin/unity-editor-mcp");
+            AddBuiltInIntegrationCard("Blender", "Работа с открытой Blender-сценой, объектами, материалами и операциями.", "Для Blender 5.1+ можно использовать mcp-for-blender. Установи uv, выполни в PowerShell команду uvx mcp-for-blender install-addon, затем открой Blender и включи add-on Interface: MCP for Blender. Запусти MCP Server в боковой панели Blender. ASTER запускает сервер командой uvx mcp-for-blender. Документация: https://github.com/scottorogers/blender-mcp");
+            AddBuiltInIntegrationCard("Visual Studio Code", "Работа с файлами и проектами разработки.", "Для полноценного управления редактором понадобится отдельный проверенный MCP-сервер или расширение. Открытие VS Code как программы не предоставляет ИИ доступ к его инструментам.");
+            AddBuiltInIntegrationCard("Google Drive", "Поиск и работа с файлами облачного хранилища.", "Потребуется OAuth-авторизация Google и отдельный коннектор с ограниченными разрешениями. Не вводи пароль Google в конфигурацию MCP.");
+            AddBuiltInIntegrationCard("Notion", "Поиск и управление страницами и базами данных.", "Потребуется авторизация Notion и отдельный коннектор с явно выданными разрешениями.");
+        }
         else if (_activePluginTab == "installed")
         {
             _count.Text = $"Плагинов: {plugins.Count}";
@@ -429,6 +522,68 @@ public sealed class CatalogWorkspaceControl : UserControl
             _items.Children.Add(add);
             foreach (var server in servers) AddMcpCard(server);
         }
+    }
+
+    private void AddBuiltInIntegrationCard(string name, string description, string requirements)
+    {
+        var configuredServer = ReadMcpServers().FirstOrDefault(x => x.Enabled &&
+            (x.Name.Contains(name, StringComparison.OrdinalIgnoreCase) ||
+             (name == "GitHub" && x.Name.Contains("github", StringComparison.OrdinalIgnoreCase)) ||
+             (name == "Unity" && x.Name.Contains("unity", StringComparison.OrdinalIgnoreCase)) ||
+             (name == "Blender" && x.Name.Contains("blender", StringComparison.OrdinalIgnoreCase))));
+        var configured = configuredServer is not null;
+        var body = new StackPanel();
+        var header = new DockPanel();
+        var title = new TextBlock { Text = name, Foreground = Brush("#EAF7FC"), FontSize = 17, FontWeight = FontWeights.SemiBold };
+        DockPanel.SetDock(title, Dock.Left);
+        header.Children.Add(title);
+        var status = new TextBlock
+        {
+            Text = configuredServer is null ? "НЕ ПОДКЛЮЧЕНО" :
+                configuredServer.LastCheckSucceeded ? $"ПРОВЕРКА УСПЕШНА · ИНСТРУМЕНТОВ: {configuredServer.LastToolCount}" :
+                "КОНФИГУРАЦИЯ ЕСТЬ · НЕ ПРОВЕРЕНА",
+            Foreground = Brush("#E6C47A"), FontSize = 9, VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+        DockPanel.SetDock(status, Dock.Right);
+        header.Children.Add(status);
+        body.Children.Add(header);
+        body.Children.Add(new TextBlock { Text = description, Foreground = Brush("#91A7B5"), FontSize = 11, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 0) });
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 10, 0, 0) };
+        var details = SecondaryButton("Требования");
+        details.Click += (_, _) => MessageBox.Show(Window.GetWindow(this), requirements, name + " · требования к подключению", MessageBoxButton.OK, MessageBoxImage.Information);
+        buttons.Children.Add(details);
+        var configure = PrimaryButton(configured ? "Открыть MCP-серверы" : "Добавить MCP-сервер");
+        configure.Margin = new Thickness(8, 0, 0, 0);
+        configure.Click += (_, _) =>
+        {
+            if (configured)
+            {
+                _activePluginTab = "mcp";
+                RefreshPluginView();
+            }
+            else
+            {
+                var template = name switch
+                {
+                    "GitHub" => new MarketplaceItem(name, "APP INTEGRATION", description, "docker", "run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server", name),
+                    "Unity" => new MarketplaceItem(name, "APP INTEGRATION", description, "npx", "-y @akiojin/unity-editor-mcp@latest", name),
+                    "Blender" => new MarketplaceItem(name, "APP INTEGRATION", description, "uvx", "mcp-for-blender", name),
+                    _ => new MarketplaceItem(name, "APP INTEGRATION", description, "", "", name)
+                };
+                AddMcpServer(template);
+            }
+        };
+        buttons.Children.Add(configure);
+        body.Children.Add(buttons);
+        _items.Children.Add(new Border
+        {
+            Background = Brush("#111D2A"),
+            BorderBrush = string.Equals(_selectedIntegration, name, StringComparison.OrdinalIgnoreCase) ? Brush("#16C8F5") : Brush("#294052"),
+            BorderThickness = new Thickness(string.Equals(_selectedIntegration, name, StringComparison.OrdinalIgnoreCase) ? 2 : 1),
+            CornerRadius = new CornerRadius(9), Padding = new Thickness(14),
+            Margin = new Thickness(0, 0, 0, 10), Child = body
+        });
     }
 
     private void AddSectionTitle(string eyebrow, string title)
@@ -579,7 +734,10 @@ public sealed class CatalogWorkspaceControl : UserControl
     {
         var body = new StackPanel();
         body.Children.Add(new TextBlock { Text = server.Name, Foreground = Brush("#EAF7FC"), FontSize = 15, FontWeight = FontWeights.SemiBold });
-        body.Children.Add(new TextBlock { Text = server.Enabled ? "КОНФИГУРАЦИЯ СОХРАНЕНА · НЕ ПОДКЛЮЧЁН" : "ОТКЛЮЧЁН", Foreground = Brush("#E6C47A"), FontSize = 9, Margin = new Thickness(0, 4, 0, 0) });
+        var statusText = !server.Enabled ? "ОТКЛЮЧЁН" :
+            server.LastCheckSucceeded ? $"ПРОВЕРКА УСПЕШНА · ИНСТРУМЕНТОВ: {server.LastToolCount}" :
+            "КОНФИГУРАЦИЯ СОХРАНЕНА · НЕ ПРОВЕРЕНА";
+        body.Children.Add(new TextBlock { Text = statusText, Foreground = Brush(server.LastCheckSucceeded ? "#62E58A" : "#E6C47A"), FontSize = 9, Margin = new Thickness(0, 4, 0, 0) });
         var transportLabel = string.Equals(server.TransportType, "streamable-http", StringComparison.OrdinalIgnoreCase)
             ? "STREAMABLE HTTP · " + server.Endpoint
             : "STDIO · " + server.Command + " " + server.Arguments;
@@ -593,12 +751,32 @@ public sealed class CatalogWorkspaceControl : UserControl
             try
             {
                 var tools = await McpRuntimeService.ListToolsAsync(server);
+                var savedServers = ReadMcpServers();
+                var savedServer = savedServers.FirstOrDefault(x => string.Equals(x.Name, server.Name, StringComparison.OrdinalIgnoreCase));
+                if (savedServer is not null)
+                {
+                    savedServer.LastCheckSucceeded = true;
+                    savedServer.LastCheckedUtc = DateTime.UtcNow;
+                    savedServer.LastToolCount = tools.Count;
+                    WriteMcpServers(savedServers);
+                    RefreshPluginView();
+                }
                 var names = tools.Count == 0 ? "Сервер ответил, но не предоставил инструменты." :
                     string.Join("\n", tools.Select(x => "• " + (x["name"]?.GetValue<string>() ?? "Без названия")));
                 MessageBox.Show(Window.GetWindow(this), $"MCP-сервер «{server.Name}» ответил.\n\nИнструменты:\n{names}", "Проверка MCP", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
+                var savedServers = ReadMcpServers();
+                var savedServer = savedServers.FirstOrDefault(x => string.Equals(x.Name, server.Name, StringComparison.OrdinalIgnoreCase));
+                if (savedServer is not null)
+                {
+                    savedServer.LastCheckSucceeded = false;
+                    savedServer.LastCheckedUtc = DateTime.UtcNow;
+                    savedServer.LastToolCount = 0;
+                    WriteMcpServers(savedServers);
+                    RefreshPluginView();
+                }
                 MessageBox.Show(Window.GetWindow(this), "Не удалось подключиться к MCP-серверу.\n\n" + ex.Message, "Ошибка MCP", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             finally
@@ -611,7 +789,15 @@ public sealed class CatalogWorkspaceControl : UserControl
         edit.Click += (_, _) => AddMcpServer(new MarketplaceItem(server.Name, "MCP", "Редактирование конфигурации", server.Command, server.Arguments, server.Name));
         var remove = SecondaryButton("Удалить");
         remove.Margin = new Thickness(7, 0, 0, 0);
-        remove.Click += (_, _) => { var list = ReadMcpServers(); list.RemoveAll(x => x.Name == server.Name); WriteMcpServers(list); RefreshPluginView(); };
+        remove.Click += (_, _) =>
+        {
+            var list = ReadMcpServers();
+            var removed = list.Where(x => x.Name == server.Name).ToList();
+            foreach (var item in removed) DeleteMcpSecrets(item);
+            list.RemoveAll(x => x.Name == server.Name);
+            WriteMcpServers(list);
+            RefreshPluginView();
+        };
         buttons.Children.Add(test);
         test.Margin = new Thickness(0, 0, 7, 0);
         buttons.Children.Add(edit);

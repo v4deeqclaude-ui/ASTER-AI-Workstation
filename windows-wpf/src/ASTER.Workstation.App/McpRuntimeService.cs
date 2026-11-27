@@ -18,11 +18,12 @@ internal static class McpRuntimeService
         Func<string, string, Task<bool>> approveToolCall,
         CancellationToken cancellationToken = default)
     {
+        await using var httpSessions = new McpHttpSessionPool();
         var servers = configuredServers.Where(x => x.Enabled).ToList();
         var tools = new List<(McpServerEntry Server, JsonObject Tool)>();
         foreach (var server in servers)
         {
-            var listed = await ListToolsAsync(server, cancellationToken);
+            var listed = await ListToolsAsync(server, httpSessions, cancellationToken);
             foreach (var tool in listed)
             {
                 var sourceName = tool["name"]?.GetValue<string>() ?? "tool";
@@ -105,7 +106,7 @@ internal static class McpRuntimeService
                     var prefix = SafeName(match.Server.Name) + "__";
                     if (originalToolName.StartsWith(prefix, StringComparison.Ordinal))
                         originalToolName = originalToolName[prefix.Length..];
-                    var result = await CallToolAsync(match.Server, originalToolName, arguments, cancellationToken);
+                    var result = await CallToolAsync(match.Server, originalToolName, arguments, httpSessions, cancellationToken);
                     messages.Add(new JsonObject { ["role"] = "tool", ["tool_name"] = name, ["content"] = result });
                 }
                 catch (Exception ex)
@@ -120,10 +121,16 @@ internal static class McpRuntimeService
 
     public static async Task<IReadOnlyList<JsonObject>> ListToolsAsync(McpServerEntry server, CancellationToken cancellationToken = default)
     {
+        await using var httpSessions = new McpHttpSessionPool();
+        return await ListToolsAsync(server, httpSessions, cancellationToken);
+    }
+
+    private static async Task<IReadOnlyList<JsonObject>> ListToolsAsync(
+        McpServerEntry server, McpHttpSessionPool httpSessions, CancellationToken cancellationToken)
+    {
         if (string.Equals(server.TransportType, "streamable-http", StringComparison.OrdinalIgnoreCase))
         {
-            await using var http = new McpStreamableHttpClient(server.Endpoint);
-            await http.InitializeAsync(cancellationToken);
+            var http = await httpSessions.GetOrCreateAsync(server, cancellationToken);
             var httpResult = await http.RequestAsync("tools/list", new JsonObject(), cancellationToken);
             var httpList = httpResult["tools"] as JsonArray ?? new JsonArray();
             return httpList.OfType<JsonObject>().Select(x => (JsonObject)x.DeepClone()).ToList();
@@ -134,12 +141,13 @@ internal static class McpRuntimeService
         return list.OfType<JsonObject>().Select(x => (JsonObject)x.DeepClone()).ToList();
     }
 
-    private static async Task<string> CallToolAsync(McpServerEntry server, string toolName, JsonObject arguments, CancellationToken cancellationToken)
+    private static async Task<string> CallToolAsync(
+        McpServerEntry server, string toolName, JsonObject arguments,
+        McpHttpSessionPool httpSessions, CancellationToken cancellationToken)
     {
         if (string.Equals(server.TransportType, "streamable-http", StringComparison.OrdinalIgnoreCase))
         {
-            await using var http = new McpStreamableHttpClient(server.Endpoint);
-            await http.InitializeAsync(cancellationToken);
+            var http = await httpSessions.GetOrCreateAsync(server, cancellationToken);
             var httpResult = await http.RequestAsync("tools/call", new JsonObject
             {
                 ["name"] = toolName,
@@ -154,6 +162,37 @@ internal static class McpRuntimeService
             ["arguments"] = arguments.DeepClone()
         }, cancellationToken);
         return result.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
+    }
+
+    private sealed class McpHttpSessionPool : IAsyncDisposable
+    {
+        private readonly Dictionary<McpServerEntry, McpStreamableHttpClient> _sessions = new();
+
+        public async Task<McpStreamableHttpClient> GetOrCreateAsync(
+            McpServerEntry server, CancellationToken cancellationToken)
+        {
+            if (_sessions.TryGetValue(server, out var existing)) return existing;
+
+            var session = new McpStreamableHttpClient(server.Endpoint);
+            try
+            {
+                await session.InitializeAsync(cancellationToken);
+                _sessions.Add(server, session);
+                return session;
+            }
+            catch
+            {
+                await session.DisposeAsync();
+                throw;
+            }
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            foreach (var session in _sessions.Values)
+                await session.DisposeAsync();
+            _sessions.Clear();
+        }
     }
 
     private static string SafeName(string value)
@@ -189,7 +228,18 @@ internal static class McpRuntimeService
             {
                 var separator = line.IndexOf('=');
                 if (separator > 0)
-                    start.Environment[line[..separator].Trim()] = line[(separator + 1)..].Trim();
+                {
+                    var variableName = line[..separator].Trim();
+                    var variableValue = line[(separator + 1)..].Trim();
+                    const string credentialPrefix = "@ASTER_CREDENTIAL:";
+                    if (variableValue.StartsWith(credentialPrefix, StringComparison.Ordinal))
+                    {
+                        var target = variableValue[credentialPrefix.Length..];
+                        if (!McpSecretStore.TryRead(target, out variableValue))
+                            throw new InvalidOperationException($"Не найден секрет Windows Credential Manager для переменной {variableName}. Открой настройки MCP и сохрани секрет повторно.");
+                    }
+                    start.Environment[variableName] = variableValue;
+                }
             }
 
             var process = new Process { StartInfo = start };

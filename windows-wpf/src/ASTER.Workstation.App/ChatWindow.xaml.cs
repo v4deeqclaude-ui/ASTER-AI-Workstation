@@ -62,28 +62,60 @@ public partial class ChatWindow : UserControl
 
     private void Attach_Click(object sender, RoutedEventArgs e)
     {
-        var menu = new ContextMenu
-        {
-            Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(15, 32, 46)),
-            Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(234, 247, 252)),
-            BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(36, 81, 106)),
-            PlacementTarget = AttachButton
-        };
-        menu.Items.Add(CreateAttachmentItem("📎  Файлы", () => AddFiles("Все файлы (*.*)|*.*")));
-        menu.Items.Add(CreateAttachmentItem("🖼  Изображения", () => AddFiles("Изображения|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.webp")));
-        menu.Items.Add(CreateAttachmentItem("💻  Исходный код", () => AddFiles("Файлы кода|*.cs;*.xaml;*.json;*.xml;*.py;*.js;*.ts;*.html;*.css;*.sql;*.md;*.txt")));
-        menu.Items.Add(CreateAttachmentItem("📁  Папка", AddFolder));
-        menu.Items.Add(CreateAttachmentItem("📸  Скриншот из файла", () => AddFiles("Изображения|*.png;*.jpg;*.jpeg;*.bmp")));
-        menu.Items.Add(new Separator());
-        menu.Items.Add(CreateAttachmentItem("Очистить вложения", () => { _attachments.Clear(); UpdateAttachmentsLabel(); }));
-        menu.IsOpen = true;
+        AddPopup.IsOpen = !AddPopup.IsOpen;
+        IntegrationIconsPanel.Visibility = Visibility.Visible;
+        AttachmentOptionsPanel.Visibility = Visibility.Collapsed;
     }
 
-    private MenuItem CreateAttachmentItem(string title, Action action)
+    private void AddPopupTab_Click(object sender, RoutedEventArgs e)
     {
-        var item = new MenuItem { Header = title, Padding = new Thickness(12, 8, 22, 8) };
-        item.Click += (_, _) => { action(); UpdateAttachmentsLabel(); };
-        return item;
+        if (sender is not Button button) return;
+        var showFiles = string.Equals(button.Tag?.ToString(), "files", StringComparison.OrdinalIgnoreCase);
+        IntegrationIconsPanel.Visibility = showFiles ? Visibility.Collapsed : Visibility.Visible;
+        AttachmentOptionsPanel.Visibility = showFiles ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void Integration_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string integrationName }) return;
+        AddPopup.IsOpen = false;
+        if (Window.GetWindow(this) is MainWindow mainWindow)
+            mainWindow.OpenIntegrationCatalog(integrationName);
+    }
+
+    private void PopupAddFiles_Click(object sender, RoutedEventArgs e)
+    {
+        AddPopup.IsOpen = false;
+        AddFiles("Все файлы (*.*)|*.*");
+        UpdateAttachmentsLabel();
+    }
+
+    private void PopupAddImages_Click(object sender, RoutedEventArgs e)
+    {
+        AddPopup.IsOpen = false;
+        AddFiles("Изображения|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.webp");
+        UpdateAttachmentsLabel();
+    }
+
+    private void PopupAddCode_Click(object sender, RoutedEventArgs e)
+    {
+        AddPopup.IsOpen = false;
+        AddFiles("Файлы кода|*.cs;*.xaml;*.json;*.xml;*.py;*.js;*.ts;*.html;*.css;*.sql;*.md;*.txt");
+        UpdateAttachmentsLabel();
+    }
+
+    private void PopupAddFolder_Click(object sender, RoutedEventArgs e)
+    {
+        AddPopup.IsOpen = false;
+        AddFolder();
+        UpdateAttachmentsLabel();
+    }
+
+    private void PopupClearAttachments_Click(object sender, RoutedEventArgs e)
+    {
+        _attachments.Clear();
+        UpdateAttachmentsLabel();
+        AddPopup.IsOpen = false;
     }
 
     private void AddFiles(string filter)

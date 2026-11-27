@@ -248,6 +248,16 @@ public partial class MainWindow : Window
         WorkspaceActivityLog.Write("NAVIGATION", "Открыт каталог PLUGIN.");
     }
 
+    public void OpenIntegrationCatalog(string integrationName)
+    {
+        SetActiveNavigation(NavPlugin);
+        HomePage.Visibility = Visibility.Collapsed;
+        EmbeddedPage.Content = new CatalogWorkspaceControl(CatalogKind.Plugin, integrationName);
+        EmbeddedPage.Visibility = Visibility.Visible;
+        SetStatus($"Открыты настройки интеграции: {integrationName}.");
+        WorkspaceActivityLog.Write("INTEGRATIONS", $"Открыта индивидуальная карточка приложения из кнопки добавления чата: {integrationName}.");
+    }
+
     private void Skill_Click(object sender, RoutedEventArgs e)
     {
         SetActiveNavigation(NavSkill);
