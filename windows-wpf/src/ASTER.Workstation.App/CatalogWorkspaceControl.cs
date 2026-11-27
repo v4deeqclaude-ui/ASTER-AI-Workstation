@@ -526,11 +526,12 @@ public sealed class CatalogWorkspaceControl : UserControl
 
     private void AddBuiltInIntegrationCard(string name, string description, string requirements)
     {
-        var configured = ReadMcpServers().Any(x => x.Enabled &&
+        var configuredServer = ReadMcpServers().FirstOrDefault(x => x.Enabled &&
             (x.Name.Contains(name, StringComparison.OrdinalIgnoreCase) ||
              (name == "GitHub" && x.Name.Contains("github", StringComparison.OrdinalIgnoreCase)) ||
              (name == "Unity" && x.Name.Contains("unity", StringComparison.OrdinalIgnoreCase)) ||
              (name == "Blender" && x.Name.Contains("blender", StringComparison.OrdinalIgnoreCase))));
+        var configured = configuredServer is not null;
         var body = new StackPanel();
         var header = new DockPanel();
         var title = new TextBlock { Text = name, Foreground = Brush("#EAF7FC"), FontSize = 17, FontWeight = FontWeights.SemiBold };
@@ -538,7 +539,9 @@ public sealed class CatalogWorkspaceControl : UserControl
         header.Children.Add(title);
         var status = new TextBlock
         {
-            Text = configured ? "КОНФИГУРАЦИЯ ЕСТЬ · НЕ ПРОВЕРЕНА" : "НЕ ПОДКЛЮЧЕНО",
+            Text = configuredServer is null ? "НЕ ПОДКЛЮЧЕНО" :
+                configuredServer.LastCheckSucceeded ? $"ПРОВЕРКА УСПЕШНА · ИНСТРУМЕНТОВ: {configuredServer.LastToolCount}" :
+                "КОНФИГУРАЦИЯ ЕСТЬ · НЕ ПРОВЕРЕНА",
             Foreground = Brush("#E6C47A"), FontSize = 9, VerticalAlignment = VerticalAlignment.Center,
             HorizontalAlignment = HorizontalAlignment.Right
         };
