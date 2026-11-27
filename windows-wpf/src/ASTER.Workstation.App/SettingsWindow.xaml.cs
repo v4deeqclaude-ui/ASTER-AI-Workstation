@@ -8,17 +8,18 @@ public partial class SettingsWindow : Window
     public SettingsWindow()
     {
         InitializeComponent();
-        WorkspaceActivityLog.Write("SETTINGS", "Открыты настройки локального ИИ.");
+        WorkspaceActivityLog.Write("SETTINGS", "Открыты настройки ASTER.");
         var settings = AiProviderSettings.Load();
         OllamaEndpointBox.Text = settings.OllamaEndpoint;
         OllamaModelBox.Text = settings.OllamaModel;
         LocalAiStatusText.Text = "Локальный ИИ ещё не проверен.";
-        AddConsoleLine("ASTER использует только локальную модель Ollama.");
+        ConnectStatusText.Text = "Нажми «Проверить» или запусти встроенный коннектор.";
+        AddConsoleLine("Открыты настройки Ollama и ASTER Connect.");
     }
 
     private void AddConsoleLine(string line)
     {
-        DiagnosticConsole.AppendText(line + Environment.NewLine);
+        DiagnosticConsole.AppendText($"[{DateTime.Now:HH:mm:ss}] {line}{Environment.NewLine}");
         DiagnosticConsole.ScrollToEnd();
     }
 
@@ -95,6 +96,56 @@ public partial class SettingsWindow : Window
         {
             CheckOllamaButton.IsEnabled = true;
         }
+    }
+
+    private async void StartConnect_Click(object sender, RoutedEventArgs e)
+    {
+        StartConnectButton.IsEnabled = false;
+        ConnectStatusText.Text = "Запускаем встроенный ASTER Connect…";
+        try
+        {
+            ConnectStatusText.Text = await AsterConnectServiceManager.StartAsync();
+            AddConsoleLine(ConnectStatusText.Text);
+            WorkspaceActivityLog.Write("CONNECT", "Локальный ASTER Connect запущен.");
+        }
+        catch (Exception ex)
+        {
+            ConnectStatusText.Text = "Не удалось запустить ASTER Connect: " + ex.Message;
+            AddConsoleLine(ConnectStatusText.Text);
+            WorkspaceActivityLog.Write("ERROR", "Ошибка запуска ASTER Connect: " + ex.Message);
+        }
+        finally
+        {
+            StartConnectButton.IsEnabled = true;
+        }
+    }
+
+    private async void CheckConnect_Click(object sender, RoutedEventArgs e)
+    {
+        CheckConnectButton.IsEnabled = false;
+        ConnectStatusText.Text = "Проверяем локальный коннектор…";
+        try
+        {
+            ConnectStatusText.Text = await AsterConnectServiceManager.CheckAsync();
+            AddConsoleLine(ConnectStatusText.Text);
+        }
+        catch (Exception ex)
+        {
+            ConnectStatusText.Text = "Проверка ASTER Connect не выполнена: " + ex.Message;
+            AddConsoleLine(ConnectStatusText.Text);
+        }
+        finally
+        {
+            CheckConnectButton.IsEnabled = true;
+        }
+    }
+
+    private void StopConnect_Click(object sender, RoutedEventArgs e)
+    {
+        AsterConnectServiceManager.Stop();
+        ConnectStatusText.Text = "Локальный ASTER Connect остановлен.";
+        AddConsoleLine(ConnectStatusText.Text);
+        WorkspaceActivityLog.Write("CONNECT", "Локальный ASTER Connect остановлен из настроек.");
     }
 
     private void OpenTerminal_Click(object sender, RoutedEventArgs e)
