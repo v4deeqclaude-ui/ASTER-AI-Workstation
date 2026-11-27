@@ -22,31 +22,36 @@
         </StackPanel>
 
         <Grid Grid.Row="1">
-            <Canvas Width="330" Height="410" HorizontalAlignment="Center"
-                    VerticalAlignment="Center" IsHitTestVisible="False" Opacity="0.075">
-                <Ellipse Canvas.Left="112" Canvas.Top="18" Width="106" Height="106"
-                         Stroke="#16C8F5" StrokeThickness="4"/>
-                <Ellipse Canvas.Left="137" Canvas.Top="57" Width="13" Height="13" Fill="#A8F1FF"/>
-                <Ellipse Canvas.Left="180" Canvas.Top="57" Width="13" Height="13" Fill="#A8F1FF"/>
-                <Path Data="M 140,93 Q 165,112 190,93" Stroke="#16C8F5"
-                      StrokeThickness="3" Fill="Transparent"/>
-                <Border Canvas.Left="87" Canvas.Top="144" Width="156" Height="142"
-                        CornerRadius="34" BorderBrush="#16C8F5" BorderThickness="4"
-                        Background="#102A39"/>
-                <Path Data="M 88,174 C 50,174 34,208 27,265 M 242,174 C 280,174 296,208 303,265"
-                      Stroke="#16C8F5" StrokeThickness="15" StrokeStartLineCap="Round"
-                      StrokeEndLineCap="Round" Fill="Transparent"/>
-                <Path Data="M 125,286 L 111,374 M 205,286 L 219,374"
-                      Stroke="#16C8F5" StrokeThickness="22" StrokeStartLineCap="Round"
-                      StrokeEndLineCap="Round" Fill="Transparent"/>
-                <Path Data="M 117,204 L 213,204 M 117,231 L 213,231"
-                      Stroke="#A8F1FF" StrokeThickness="4" Fill="Transparent"/>
-                <Ellipse Canvas.Left="154" Canvas.Top="163" Width="22" Height="22"
-                         Stroke="#A8F1FF" StrokeThickness="3"/>
-                <Line X1="165" Y1="0" X2="165" Y2="18" Stroke="#16C8F5" StrokeThickness="3"/>
-                <Ellipse Canvas.Left="157" Canvas.Top="0" Width="16" Height="16"
-                         Stroke="#A8F1FF" StrokeThickness="3"/>
-            </Canvas>
+            <Canvas Width="360" Height="420" HorizontalAlignment="Center"
+                    VerticalAlignment="Center" IsHitTestVisible="False" Opacity="0.095">
+                <Ellipse Canvas.Left="42" Canvas.Top="26" Width="276" Height="276" Stroke="#16C8F5" StrokeThickness="2" StrokeDashArray="2 8"/>
+                <Ellipse Canvas.Left="62" Canvas.Top="46" Width="236" Height="236" Stroke="#A8F1FF" StrokeThickness="1"/>
+                <Path Data="M 180,0 L 180,28 M 174,8 L 186,8" Stroke="#16C8F5" StrokeThickness="3" Fill="Transparent"/>
+                <Ellipse Canvas.Left="169" Canvas.Top="0" Width="22" Height="22" Stroke="#A8F1FF" StrokeThickness="3" Fill="#102A39"/>
+                <Polygon Points="111,65 139,43 221,43 249,65 263,112 248,153 220,177 140,177 112,153 97,112"
+                         Fill="#102A39" Stroke="#16C8F5" StrokeThickness="5"/>
+                <Polygon Points="126,83 145,69 215,69 234,83 243,111 231,139 211,154 149,154 129,139 117,111"
+                         Fill="#0B1C29" Stroke="#A8F1FF" StrokeThickness="2"/>
+                <Path Data="M 134,111 L 158,111 L 166,120 L 158,129 L 134,129 Z" Fill="#16C8F5" Stroke="#A8F1FF" StrokeThickness="1"/>
+                <Path Data="M 226,111 L 202,111 L 194,120 L 202,129 L 226,129 Z" Fill="#16C8F5" Stroke="#A8F1FF" StrokeThickness="1"/>
+                <Path Data="M 160,143 L 180,150 L 200,143" Stroke="#A8F1FF" StrokeThickness="3" Fill="Transparent"/>
+                <Path Data="M 99,91 L 79,106 L 88,137 L 107,145 M 261,91 L 281,106 L 272,137 L 253,145"
+                      Stroke="#16C8F5" StrokeThickness="6" Fill="Transparent"/>
+                <Path Data="M 180,177 L 180,193" Stroke="#16C8F5" StrokeThickness="5" Fill="Transparent"/>
+                <Polygon Points="119,194 145,181 215,181 241,194 258,279 236,307 124,307 102,279"
+                         Fill="#102A39" Stroke="#16C8F5" StrokeThickness="5"/>
+                <Path Data="M 139,215 L 221,215 M 130,235 L 230,235 M 140,255 L 220,255"
+                      Stroke="#A8F1FF" StrokeThickness="3" Fill="Transparent"/>
+                <Polygon Points="180,220 197,239 180,258 163,239" Fill="#16C8F5" Stroke="#A8F1FF" StrokeThickness="2"/>
+                <Ellipse Canvas.Left="171" Canvas.Top="230" Width="18" Height="18" Stroke="#E5FBFF" StrokeThickness="2"/>
+                <Path Data="M 111,204 L 79,220 L 64,275 L 83,285 L 109,250 M 249,204 L 281,220 L 296,275 L 277,285 L 251,250"
+                      Stroke="#16C8F5" StrokeThickness="13" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
+                <Path Data="M 141,307 L 130,365 L 111,384 M 219,307 L 230,365 L 249,384"
+                      Stroke="#16C8F5" StrokeThickness="18" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
+                <Path Data="M 95,390 L 128,390 M 232,390 L 265,390" Stroke="#A8F1FF" StrokeThickness="5" Fill="Transparent"/>
+                <Path Data="M 49,174 L 68,174 M 292,174 L 311,174 M 180,318 L 180,344"
+                      Stroke="#A8F1FF" StrokeThickness="2" Fill="Transparent"/>
+            </Canvas>>
 
             <ListBox x:Name="MessagesList" Background="Transparent" BorderThickness="0"
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
@@ -95,7 +100,7 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <Button x:Name="AttachButton" Grid.Column="0" Content="＋" FontSize="20" Width="44" Margin="0,0,8,0"
-                    Background="#173044" Foreground="#A8F1FF" BorderBrush="#24516A" Click="Attach_Click" ToolTip="Добавить файлы и папки"/>
+                    Background="#173044" Foreground="#A8F1FF" BorderBrush="#24516A" Click="Attach_Click" PreviewMouseRightButtonDown="AttachButton_Clear" ToolTip="Добавить файлы и папки; правый клик — очистить вложения"/>
             <Border Grid.Column="1" Background="#111D2A" BorderBrush="#24516A"
                     BorderThickness="1" CornerRadius="10" Padding="4">
                 <TextBox x:Name="MessageInput" MinHeight="48" MaxHeight="140"
