@@ -183,13 +183,13 @@ public sealed class MyApplicationsControl : UserControl
             Grid.SetRow(connection, 2); layout.Children.Add(connection);
 
             var actions = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-            var launch = new Button { Content = "Запустить", Padding = new Thickness(11,7), Margin = new Thickness(6,0,0,0) };
+            var launch = new Button { Content = "Запустить", Padding = new Thickness(11,7,11,7), Margin = new Thickness(6,0,0,0) };
             launch.Click += (_, _) => Launch(app);
             actions.Children.Add(launch);
-            var link = new Button { Content = "Подключить MCP", Padding = new Thickness(11,7), Margin = new Thickness(6,0,0,0) };
+            var link = new Button { Content = "Подключить MCP", Padding = new Thickness(11,7,11,7), Margin = new Thickness(6,0,0,0) };
             link.Click += (_, _) => LinkMcp(app);
             actions.Children.Add(link);
-            var remove = new Button { Content = "Убрать", Padding = new Thickness(11,7), Margin = new Thickness(6,0,0,0) };
+            var remove = new Button { Content = "Убрать", Padding = new Thickness(11,7,11,7), Margin = new Thickness(6,0,0,0) };
             remove.Click += (_, _) => Remove(app);
             actions.Children.Add(remove);
             Grid.SetColumn(actions, 1); Grid.SetRowSpan(actions, 3); layout.Children.Add(actions);
