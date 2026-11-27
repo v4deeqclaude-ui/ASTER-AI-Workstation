@@ -250,9 +250,12 @@ public partial class MainWindow : Window
 
     public void OpenIntegrationCatalog(string integrationName)
     {
-        Plugin_Click(this, new RoutedEventArgs());
-        SetStatus($"Выбрано приложение: {integrationName}. Открыт каталог интеграций ASTER.");
-        WorkspaceActivityLog.Write("INTEGRATIONS", $"Пользователь выбрал приложение из кнопки добавления чата: {integrationName}.");
+        SetActiveNavigation(NavPlugin);
+        HomePage.Visibility = Visibility.Collapsed;
+        EmbeddedPage.Content = new CatalogWorkspaceControl(CatalogKind.Plugin, integrationName);
+        EmbeddedPage.Visibility = Visibility.Visible;
+        SetStatus($"Открыты настройки интеграции: {integrationName}.");
+        WorkspaceActivityLog.Write("INTEGRATIONS", $"Открыта индивидуальная карточка приложения из кнопки добавления чата: {integrationName}.");
     }
 
     private void Skill_Click(object sender, RoutedEventArgs e)
