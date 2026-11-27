@@ -73,7 +73,7 @@ public sealed class EncryptedFilePairingStoreTests : IDisposable
             .Select(_ => _store.TryRedeemCompletionCodeAsync("pair-race", code!, now.AddMinutes(2)));
         var results = await Task.WhenAll(attempts);
 
-        Assert.Single(results.Where(value => value == 13579));
+        Assert.Single(results, value => value == 13579);
         Assert.Equal(19, results.Count(value => value is null));
     }
 
