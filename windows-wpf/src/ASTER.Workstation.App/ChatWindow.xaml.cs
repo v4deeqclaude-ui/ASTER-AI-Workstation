@@ -37,6 +37,7 @@ public partial class ChatWindow : UserControl
         _sectionTitle = sectionTitle;
         _systemPrompt = systemPrompt;
         SectionTitleText.Text = sectionTitle;
+        CloseWorkspaceButton.Visibility = workspaceKey == "HOME" ? Visibility.Collapsed : Visibility.Visible;
         SectionSubtitleText.Text = workspaceKey == "CHAT"
             ? "Локальный ИИ Ollama · переписка хранится на этом компьютере"
             : "Отдельная рабочая переписка · инструкции ASTER применяются автоматически";
@@ -64,27 +65,60 @@ public partial class ChatWindow : UserControl
 
     private void Attach_Click(object sender, RoutedEventArgs e)
     {
-        var choice = MessageBox.Show(Window.GetWindow(this),
-            "Да — выбрать файлы.\nНет — выбрать папку проекта.\nОтмена — закрыть меню.",
-            "Добавить материалы", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
-        if (choice == MessageBoxResult.Yes)
+        var menu = new ContextMenu
         {
-            var dialog = new OpenFileDialog { Title = "Выбери файлы для ASTER", Filter = "Все файлы (*.*)|*.*", Multiselect = true };
-            if (dialog.ShowDialog(Window.GetWindow(this)) == true) _attachments.AddRange(dialog.FileNames);
-        }
-        else if (choice == MessageBoxResult.No)
-        {
-            var dialog = new OpenFolderDialog { Title = "Выбери папку с материалами", Multiselect = false };
-            if (dialog.ShowDialog(Window.GetWindow(this)) == true) _attachments.Add(dialog.FolderName);
-        }
+            Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(15, 32, 46)),
+            Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(234, 247, 252)),
+            BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(36, 81, 106)),
+            PlacementTarget = AttachButton
+        };
+        menu.Items.Add(CreateAttachmentItem("📎  Файлы", () => AddFiles("Все файлы (*.*)|*.*")));
+        menu.Items.Add(CreateAttachmentItem("🖼  Изображения", () => AddFiles("Изображения|*.png;*.jpg;*.jpeg;*.bmp;*.gif;*.webp")));
+        menu.Items.Add(CreateAttachmentItem("💻  Исходный код", () => AddFiles("Файлы кода|*.cs;*.xaml;*.json;*.xml;*.py;*.js;*.ts;*.html;*.css;*.sql;*.md;*.txt")));
+        menu.Items.Add(CreateAttachmentItem("📁  Папка", AddFolder));
+        menu.Items.Add(CreateAttachmentItem("📸  Скриншот из файла", () => AddFiles("Изображения|*.png;*.jpg;*.jpeg;*.bmp")));
+        menu.Items.Add(new Separator());
+        menu.Items.Add(CreateAttachmentItem("Очистить вложения", () => { _attachments.Clear(); UpdateAttachmentsLabel(); }));
+        menu.IsOpen = true;
+    }
+
+    private MenuItem CreateAttachmentItem(string title, Action action)
+    {
+        var item = new MenuItem { Header = title, Padding = new Thickness(12, 8, 22, 8) };
+        item.Click += (_, _) => { action(); UpdateAttachmentsLabel(); };
+        return item;
+    }
+
+    private void AddFiles(string filter)
+    {
+        var dialog = new OpenFileDialog { Title = "Выбери материалы для ASTER", Filter = filter, Multiselect = true };
+        if (dialog.ShowDialog(Window.GetWindow(this)) == true)
+            foreach (var file in dialog.FileNames)
+                if (!_attachments.Contains(file, StringComparer.OrdinalIgnoreCase)) _attachments.Add(file);
+    }
+
+    private void AddFolder()
+    {
+        var dialog = new OpenFolderDialog { Title = "Выбери папку с материалами", Multiselect = false };
+        if (dialog.ShowDialog(Window.GetWindow(this)) == true && !_attachments.Contains(dialog.FolderName, StringComparer.OrdinalIgnoreCase))
+            _attachments.Add(dialog.FolderName);
+    }
+
+    private void UpdateAttachmentsLabel()
+    {
         AttachmentsText.Text = _attachments.Count == 0 ? "" : "Вложения: " + string.Join(", ", _attachments.Select(Path.GetFileName));
-        AttachButton.ToolTip = _attachments.Count == 0 ? "Добавить файлы и папки" : "Нажми правой кнопкой, чтобы очистить вложения";
+        AttachButton.ToolTip = _attachments.Count == 0 ? "Добавить файлы и папки" : "Вложения: " + _attachments.Count + " · правый клик — очистить";
+    }
+
+    private void CloseWorkspace_Click(object sender, RoutedEventArgs e)
+    {
+        (Window.GetWindow(this) as MainWindow)?.ReturnToHome();
     }
 
     private void AttachButton_Clear(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
         _attachments.Clear();
-        AttachmentsText.Text = "";
+        UpdateAttachmentsLabel();
     }
 
     private async void Send_Click(object sender, RoutedEventArgs e) => await SendMessageAsync();
@@ -139,7 +173,7 @@ public partial class ChatWindow : UserControl
         AddMessage("user", string.IsNullOrWhiteSpace(text) ? "Материалы: " + string.Join(", ", _attachments.Select(Path.GetFileName)) : text);
         await SaveMessageAsync("user", promptText);
         _attachments.Clear();
-        AttachmentsText.Text = "";
+        UpdateAttachmentsLabel();
         StatusText.Text = $"ASTER обращается к локальной модели {settings.OllamaModel}…";
 
         try
