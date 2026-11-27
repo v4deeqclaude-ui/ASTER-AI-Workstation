@@ -434,7 +434,10 @@ public sealed class CatalogWorkspaceControl : UserControl
                 Endpoint = endpoint.Text.Trim(),
                 TransportType = kind,
                 EnvironmentVariables = environmentVariables,
-                Enabled = true
+                Enabled = true,
+                LastCheckSucceeded = false,
+                LastCheckedUtc = null,
+                LastToolCount = 0
             });
             WriteMcpServers(servers);
             dialog.DialogResult = true;
@@ -728,7 +731,10 @@ public sealed class CatalogWorkspaceControl : UserControl
     {
         var body = new StackPanel();
         body.Children.Add(new TextBlock { Text = server.Name, Foreground = Brush("#EAF7FC"), FontSize = 15, FontWeight = FontWeights.SemiBold });
-        body.Children.Add(new TextBlock { Text = server.Enabled ? "КОНФИГУРАЦИЯ СОХРАНЕНА · НЕ ПОДКЛЮЧЁН" : "ОТКЛЮЧЁН", Foreground = Brush("#E6C47A"), FontSize = 9, Margin = new Thickness(0, 4, 0, 0) });
+        var statusText = !server.Enabled ? "ОТКЛЮЧЁН" :
+            server.LastCheckSucceeded ? $"ПРОВЕРКА УСПЕШНА · ИНСТРУМЕНТОВ: {server.LastToolCount}" :
+            "КОНФИГУРАЦИЯ СОХРАНЕНА · НЕ ПРОВЕРЕНА";
+        body.Children.Add(new TextBlock { Text = statusText, Foreground = Brush(server.LastCheckSucceeded ? "#62E58A" : "#E6C47A"), FontSize = 9, Margin = new Thickness(0, 4, 0, 0) });
         var transportLabel = string.Equals(server.TransportType, "streamable-http", StringComparison.OrdinalIgnoreCase)
             ? "STREAMABLE HTTP · " + server.Endpoint
             : "STDIO · " + server.Command + " " + server.Arguments;
@@ -742,12 +748,32 @@ public sealed class CatalogWorkspaceControl : UserControl
             try
             {
                 var tools = await McpRuntimeService.ListToolsAsync(server);
+                var savedServers = ReadMcpServers();
+                var savedServer = savedServers.FirstOrDefault(x => string.Equals(x.Name, server.Name, StringComparison.OrdinalIgnoreCase));
+                if (savedServer is not null)
+                {
+                    savedServer.LastCheckSucceeded = true;
+                    savedServer.LastCheckedUtc = DateTime.UtcNow;
+                    savedServer.LastToolCount = tools.Count;
+                    WriteMcpServers(savedServers);
+                    RefreshPluginView();
+                }
                 var names = tools.Count == 0 ? "Сервер ответил, но не предоставил инструменты." :
                     string.Join("\n", tools.Select(x => "• " + (x["name"]?.GetValue<string>() ?? "Без названия")));
                 MessageBox.Show(Window.GetWindow(this), $"MCP-сервер «{server.Name}» ответил.\n\nИнструменты:\n{names}", "Проверка MCP", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
+                var savedServers = ReadMcpServers();
+                var savedServer = savedServers.FirstOrDefault(x => string.Equals(x.Name, server.Name, StringComparison.OrdinalIgnoreCase));
+                if (savedServer is not null)
+                {
+                    savedServer.LastCheckSucceeded = false;
+                    savedServer.LastCheckedUtc = DateTime.UtcNow;
+                    savedServer.LastToolCount = 0;
+                    WriteMcpServers(savedServers);
+                    RefreshPluginView();
+                }
                 MessageBox.Show(Window.GetWindow(this), "Не удалось подключиться к MCP-серверу.\n\n" + ex.Message, "Ошибка MCP", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
             finally
