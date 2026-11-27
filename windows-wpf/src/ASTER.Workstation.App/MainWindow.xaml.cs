@@ -230,11 +230,50 @@ public partial class MainWindow : Window
 
     private void Applications_Click(object sender, RoutedEventArgs e)
     {
-        PageTitle.Text = "Приложения";
-        PageSubtitle.Text = "Unity, Blender и другие инструменты будут подключаться через адаптеры.";
-        WorkspaceActivityLog.Write("NAVIGATION", "Открыт раздел «Приложения».");
-        MessageBox.Show(this, "Подключение Unity, Blender и других программ запланировано на следующие этапы.\n\nВ версии 0.1 этот раздел является информационным.",
-            "ASTER — приложения", MessageBoxButton.OK, MessageBoxImage.Information);
+        OpenAiWorkspace("APPS", "ПРИЛОЖЕНИЯ",
+            "Ты — ASTER App Creator. Помогай проектировать и создавать новые приложения: сначала уточняй назначение и платформу, затем предлагай архитектуру, интерфейс, структуру проекта и пошаговый план реализации. Учитывай, что пользователь предпочитает готовые файлы и простые инструкции. Не утверждай, что файлы созданы или приложение собрано, если это не подтверждено.");
+    }
+
+    private void Plugin_Click(object sender, RoutedEventArgs e)
+    {
+        HomePage.Visibility = Visibility.Collapsed;
+        EmbeddedPage.Content = new CatalogWorkspaceControl(CatalogKind.Plugin);
+        EmbeddedPage.Visibility = Visibility.Visible;
+        WorkspaceActivityLog.Write("NAVIGATION", "Открыт каталог PLUGIN.");
+    }
+
+    private void Skill_Click(object sender, RoutedEventArgs e)
+    {
+        HomePage.Visibility = Visibility.Collapsed;
+        EmbeddedPage.Content = new CatalogWorkspaceControl(CatalogKind.Skill);
+        EmbeddedPage.Visibility = Visibility.Visible;
+        WorkspaceActivityLog.Write("NAVIGATION", "Открыт каталог SKILL.");
+    }
+
+    private void Video_Click(object sender, RoutedEventArgs e)
+    {
+        OpenAiWorkspace("VIDEO", "ВИДЕО",
+            "Ты — помощник ASTER для подготовки видеозадач. Превращай обычное описание пользователя в подробный профессиональный промт для генерации или редактирования видео: сцена, объект, действие, камера, движение, свет, стиль, длительность, формат и ограничения. Не заявляй, что видео уже создано: пока готовь промт и уточняй важные детали.");
+    }
+
+    private void Photo_Click(object sender, RoutedEventArgs e)
+    {
+        OpenAiWorkspace("PHOTO", "ФОТО",
+            "Ты — помощник ASTER для подготовки задач с изображениями. Превращай запрос пользователя в точный промт для создания или редактирования изображения: субъект, композиция, поза, окружение, освещение, стиль, детали, сохранение важных особенностей и негативные ограничения. Не заявляй, что изображение уже обработано: пока готовь промт и уточняй только необходимые детали.");
+    }
+
+    private void Music_Click(object sender, RoutedEventArgs e)
+    {
+        OpenAiWorkspace("MUSIC", "МУЗЫКА",
+            "Ты — помощник ASTER для подготовки музыкальных задач. Превращай запрос пользователя в подробное техническое задание и промт: жанр, настроение, темп, инструменты, вокал, структура, длительность, динамика, микс и ограничения. Не заявляй, что музыка уже создана: пока готовь промт и уточняй важные детали.");
+    }
+
+    private void OpenAiWorkspace(string key, string title, string prompt)
+    {
+        HomePage.Visibility = Visibility.Collapsed;
+        EmbeddedPage.Content = new ChatWindow(_database, key, title, prompt);
+        EmbeddedPage.Visibility = Visibility.Visible;
+        WorkspaceActivityLog.Write("NAVIGATION", $"Открыт раздел «{title}» со своим чатом и инструкциями ASTER.");
     }
 
     private void History_Click(object sender, RoutedEventArgs e)
@@ -248,11 +287,9 @@ public partial class MainWindow : Window
 
     private void Chat_Click(object sender, RoutedEventArgs e)
     {
-        HomePage.Visibility = Visibility.Collapsed;
-        EmbeddedPage.Content = new ChatWindow(_database);
-        EmbeddedPage.Visibility = Visibility.Visible;
-        SetStatus("AI-ассистент открыт внутри ASTER. Остальные разделы остаются доступны.");
-        WorkspaceActivityLog.Write("NAVIGATION", "Открыт встроенный AI-ассистент.");
+        OpenAiWorkspace("CHAT", "ИИ-ЧАТ",
+            "Ты — ASTER, локальный интеллектуальный помощник. Отвечай понятно, полезно и по делу.");
+        SetStatus("ИИ-чат открыт внутри ASTER.");
     }
 
     private void Terminal_Click(object sender, RoutedEventArgs e)

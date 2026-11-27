@@ -1,9 +1,11 @@
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using ASTER.Workstation.Core.Services;
 using ASTER.Workstation.Data.Database;
+using Microsoft.Win32;
 
 namespace ASTER.Workstation.App;
 
@@ -11,19 +13,33 @@ public sealed class ChatMessageView
 {
     public string Author { get; init; } = "";
     public string Content { get; init; } = "";
-    public string BubbleBrush { get; init; } = "#202630";
 }
 
 public partial class ChatWindow : UserControl
 {
     private readonly SqliteDatabase _database;
     private readonly ObservableCollection<ChatMessageView> _messages = new();
+    private readonly string _workspaceKey;
+    private readonly string _sectionTitle;
+    private readonly string _systemPrompt;
     private bool _sending;
+    private readonly List<string> _attachments = new();
 
-    public ChatWindow(SqliteDatabase database)
+    public ChatWindow(
+        SqliteDatabase database,
+        string workspaceKey = "CHAT",
+        string sectionTitle = "ИИ-чат",
+        string systemPrompt = "")
     {
         InitializeComponent();
         _database = database;
+        _workspaceKey = workspaceKey;
+        _sectionTitle = sectionTitle;
+        _systemPrompt = systemPrompt;
+        SectionTitleText.Text = sectionTitle;
+        SectionSubtitleText.Text = workspaceKey == "CHAT"
+            ? "Локальный ИИ Ollama · переписка хранится на этом компьютере"
+            : "Отдельная рабочая переписка · инструкции ASTER применяются автоматически";
         MessagesList.ItemsSource = _messages;
         Loaded += async (_, _) => await LoadMessagesAsync();
     }
@@ -33,7 +49,8 @@ public partial class ChatWindow : UserControl
         await using var connection = _database.CreateConnection();
         await connection.OpenAsync();
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT Role, Content FROM AiMessages ORDER BY Id;";
+        command.CommandText = "SELECT Role, Content FROM AiMessages WHERE Workspace = $workspace ORDER BY Id;";
+        command.Parameters.AddWithValue("$workspace", _workspaceKey);
         await using var reader = await command.ExecuteReaderAsync();
         var loadedCount = 0;
         while (await reader.ReadAsync())
@@ -41,8 +58,33 @@ public partial class ChatWindow : UserControl
             AddMessage(reader.GetString(0), reader.GetString(1));
             loadedCount++;
         }
-        WorkspaceActivityLog.Write("CHAT", $"Загружена история локального AI-чата: {loadedCount} сообщений.");
+        WorkspaceActivityLog.Write("CHAT", $"Загружена история раздела «{_sectionTitle}»: {loadedCount} сообщений.");
         ScrollToEnd();
+    }
+
+    private void Attach_Click(object sender, RoutedEventArgs e)
+    {
+        var choice = MessageBox.Show(Window.GetWindow(this),
+            "Да — выбрать файлы.\nНет — выбрать папку проекта.\nОтмена — закрыть меню.",
+            "Добавить материалы", MessageBoxButton.YesNoCancel, MessageBoxImage.Question);
+        if (choice == MessageBoxResult.Yes)
+        {
+            var dialog = new OpenFileDialog { Title = "Выбери файлы для ASTER", Filter = "Все файлы (*.*)|*.*", Multiselect = true };
+            if (dialog.ShowDialog(Window.GetWindow(this)) == true) _attachments.AddRange(dialog.FileNames);
+        }
+        else if (choice == MessageBoxResult.No)
+        {
+            var dialog = new OpenFolderDialog { Title = "Выбери папку с материалами", Multiselect = false };
+            if (dialog.ShowDialog(Window.GetWindow(this)) == true) _attachments.Add(dialog.FolderName);
+        }
+        AttachmentsText.Text = _attachments.Count == 0 ? "" : "Вложения: " + string.Join(", ", _attachments.Select(Path.GetFileName));
+        AttachButton.ToolTip = _attachments.Count == 0 ? "Добавить файлы и папки" : "Нажми правой кнопкой, чтобы очистить вложения";
+    }
+
+    private void AttachButton_Clear(object sender, System.Windows.Input.MouseButtonEventArgs e)
+    {
+        _attachments.Clear();
+        AttachmentsText.Text = "";
     }
 
     private async void Send_Click(object sender, RoutedEventArgs e) => await SendMessageAsync();
@@ -59,7 +101,33 @@ public partial class ChatWindow : UserControl
     private async Task SendMessageAsync()
     {
         var text = MessageInput.Text.Trim();
-        if (_sending || string.IsNullOrWhiteSpace(text)) return;
+        if (_sending || (string.IsNullOrWhiteSpace(text) && _attachments.Count == 0)) return;
+
+        var promptText = text;
+        foreach (var path in _attachments.ToArray())
+        {
+            if (File.Exists(path))
+            {
+                var extension = Path.GetExtension(path).ToLowerInvariant();
+                var readable = new[] { ".txt", ".md", ".cs", ".json", ".xml", ".yaml", ".yml", ".log", ".csv", ".xaml", ".py", ".js", ".ts", ".html", ".css", ".sql" };
+                if (readable.Contains(extension))
+                {
+                    try
+                    {
+                        var content = await File.ReadAllTextAsync(path);
+                        if (content.Length > 20000) content = content[..20000] + "\n[Файл сокращён до 20 000 символов]";
+                        promptText += "\n\n[Содержимое файла: " + Path.GetFileName(path) + "]\n" + content;
+                    }
+                    catch (Exception ex) { promptText += "\n[Не удалось прочитать " + Path.GetFileName(path) + ": " + ex.Message + "]"; }
+                }
+                else promptText += "\n[Прикреплён файл " + Path.GetFileName(path) + ". Текущая локальная модель не умеет анализировать этот тип вложения напрямую.]";
+            }
+            else if (Directory.Exists(path))
+            {
+                var files = Directory.GetFiles(path, "*", SearchOption.TopDirectoryOnly).Take(40);
+                promptText += "\n[Папка " + path + ". Файлы верхнего уровня: " + string.Join(", ", files.Select(Path.GetFileName)) + "]";
+            }
+        }
 
         var settings = AiProviderSettings.Load();
         _sending = true;
@@ -67,19 +135,24 @@ public partial class ChatWindow : UserControl
         MessageInput.IsEnabled = false;
         MessageInput.Clear();
 
-        WorkspaceActivityLog.Write("CHAT", $"Отправлено сообщение локальной модели (символов: {text.Length}). Содержимое не записывается в системный журнал.");
-        AddMessage("user", text);
-        await SaveMessageAsync("user", text);
+        WorkspaceActivityLog.Write("CHAT", $"Отправлено сообщение в раздел «{_sectionTitle}» (символов: {promptText.Length}, вложений: {_attachments.Count}).");
+        AddMessage("user", string.IsNullOrWhiteSpace(text) ? "Материалы: " + string.Join(", ", _attachments.Select(Path.GetFileName)) : text);
+        await SaveMessageAsync("user", promptText);
+        _attachments.Clear();
+        AttachmentsText.Text = "";
         StatusText.Text = $"ASTER обращается к локальной модели {settings.OllamaModel}…";
 
         try
         {
             var history = await ReadRecentMessagesAsync(24);
+            if (!string.IsNullOrWhiteSpace(_systemPrompt))
+                history.Insert(0, ("system", _systemPrompt));
+
             var answer = await OllamaChatClient.SendAsync(settings.OllamaEndpoint, settings.OllamaModel, history);
             AddMessage("assistant", answer);
             await SaveMessageAsync("assistant", answer);
-            StatusText.Text = "Ответ получен от локальной модели. История сохранена на компьютере.";
-            WorkspaceActivityLog.Write("CHAT", "Получен ответ от локальной модели Ollama; история сохранена.");
+            StatusText.Text = "Ответ получен от локальной модели. История раздела сохранена.";
+            WorkspaceActivityLog.Write("CHAT", $"Получен ответ Ollama в разделе «{_sectionTitle}».");
         }
         catch (Exception ex)
         {
@@ -102,7 +175,8 @@ public partial class ChatWindow : UserControl
         await using var connection = _database.CreateConnection();
         await connection.OpenAsync();
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT Role, Content FROM AiMessages ORDER BY Id DESC LIMIT $limit;";
+        command.CommandText = "SELECT Role, Content FROM AiMessages WHERE Workspace = $workspace ORDER BY Id DESC LIMIT $limit;";
+        command.Parameters.AddWithValue("$workspace", _workspaceKey);
         command.Parameters.AddWithValue("$limit", limit);
         await using var reader = await command.ExecuteReaderAsync();
         while (await reader.ReadAsync()) items.Add((reader.GetString(0), reader.GetString(1)));
@@ -115,21 +189,20 @@ public partial class ChatWindow : UserControl
         await using var connection = _database.CreateConnection();
         await connection.OpenAsync();
         await using var command = connection.CreateCommand();
-        command.CommandText = "INSERT INTO AiMessages (Role, Content, CreatedUtc) VALUES ($role, $content, $created);";
+        command.CommandText = "INSERT INTO AiMessages (Role, Content, CreatedUtc, Workspace) VALUES ($role, $content, $created, $workspace);";
         command.Parameters.AddWithValue("$role", role);
         command.Parameters.AddWithValue("$content", content);
         command.Parameters.AddWithValue("$created", DateTime.UtcNow.ToString("O"));
+        command.Parameters.AddWithValue("$workspace", _workspaceKey);
         await command.ExecuteNonQueryAsync();
     }
 
     private void AddMessage(string role, string content)
     {
-        var isUser = role == "user";
         _messages.Add(new ChatMessageView
         {
             Author = role switch { "user" => "ТЫ", "assistant" => "ASTER AI", _ => "СИСТЕМА" },
-            Content = content,
-            BubbleBrush = isUser ? "#29313D" : "#202A27"
+            Content = content
         });
         ScrollToEnd();
     }
