@@ -97,5 +97,12 @@ public partial class SettingsWindow : Window
         }
     }
 
+    private void OpenTerminal_Click(object sender, RoutedEventArgs e)
+    {
+        WorkspaceActivityLog.Write("SETTINGS", "Командная строка открыта из раздела настроек.");
+        var terminal = new TerminalWindow { Owner = this };
+        terminal.Show();
+    }
+
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
 }
