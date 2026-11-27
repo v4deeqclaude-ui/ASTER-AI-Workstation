@@ -8,59 +8,30 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Margin="0,0,0,12">
-            <StackPanel HorizontalAlignment="Left">
-                <TextBlock x:Name="SectionEyebrow" Text="✦ ASTER AI WORKSTATION" FontSize="10"
-                           Foreground="#55D8FF" FontWeight="SemiBold" />
-                <TextBlock x:Name="SectionTitleText" Text="Главная" FontSize="22"
-                           FontWeight="SemiBold" Margin="0,3,0,0"/>
-                <TextBlock x:Name="SectionSubtitleText"
-                           Text="Локальный ИИ Ollama · переписка хранится на этом компьютере"
-                           FontSize="10" Foreground="#91AFC4" Margin="0,3,0,0"/>
-            </StackPanel>
-            <Button x:Name="CloseWorkspaceButton" Content="×" Width="32" Height="32"
-                    HorizontalAlignment="Right" VerticalAlignment="Top" Padding="0"
-                    FontSize="21" FontWeight="Light" Background="#10273A"
+        <Grid Grid.Row="0" Height="30" Margin="0,0,0,6">
+            <Button x:Name="CloseWorkspaceButton" Content="×" Width="30" Height="30"
+                    HorizontalAlignment="Right" VerticalAlignment="Center" Padding="0"
+                    FontSize="20" FontWeight="Light" Background="#10273A"
                     Foreground="#A8F1FF" BorderBrush="#28617D"
                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                     Click="CloseWorkspace_Click" ToolTip="Закрыть раздел"/>
         </Grid>
 
         <Grid Grid.Row="1" ClipToBounds="True">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1.15*"/>
-                <ColumnDefinition Width="0.85*"/>
-            </Grid.ColumnDefinitions>
-
-            <Border Grid.ColumnSpan="2" Background="#061522" BorderBrush="#17415D"
-                    BorderThickness="1" CornerRadius="14" Opacity="0.52"/>
-            <Image x:Name="HeroImage" Grid.Column="1" Width="330" Height="440" HorizontalAlignment="Right" VerticalAlignment="Center" Stretch="Uniform" IsHitTestVisible="False" Opacity="0.98" Margin="0,0,8,0"/>
-
-            <StackPanel Grid.Column="0" Margin="28,38,0,0" VerticalAlignment="Top"
-                        MaxWidth="480">
-                <TextBlock Text="ДОБРО ПОЖАЛОВАТЬ В ASTER!" FontSize="11"
-                           Foreground="#53D8FF" FontWeight="Bold"/>
-                <TextBlock Text="Добро пожаловать в ASTER!"
-                           FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap"
-                           Margin="0,12,0,8" Foreground="#F0FAFF"/>
-                <TextBlock Text="Ваш личный AI-помощник&#10;для работы, творчества и игр"
-                           FontSize="16" Foreground="#B5D7E8" LineHeight="23"/>
-                <Border Background="#102E46" BorderBrush="#1D719C" BorderThickness="1"
-                        CornerRadius="12" Padding="12,9" Margin="0,24,0,0"
-                        HorizontalAlignment="Left">
-                    <TextBlock Text="✦  Спрашивайте, создавайте, исследуйте…" FontSize="12"
-                               Foreground="#C9F3FF"/>
-                </Border>
-            </StackPanel>
-
-            <ListBox x:Name="MessagesList" Grid.Column="0" Grid.ColumnSpan="2"
+            <Border Background="#061522" BorderBrush="#17415D"
+                    BorderThickness="1" CornerRadius="14" Opacity="0.42"/>
+            <Image x:Name="HeroImage" Width="310" Height="465"
+                   HorizontalAlignment="Right" VerticalAlignment="Center"
+                   Stretch="Fill" IsHitTestVisible="False"
+                   Opacity="0.36" Margin="0,0,8,0"
+                   RenderOptions.BitmapScalingMode="Fant"/>
+            <ListBox x:Name="MessagesList"
                      Background="Transparent" BorderThickness="0"
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                     SelectionMode="Single" Margin="20,12,18,12">
+                     SelectionMode="Single" Margin="16,12,16,12">
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
                         <Setter Property="Background" Value="Transparent"/>
@@ -69,20 +40,25 @@
                         <Setter Property="Margin" Value="0"/>
                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                         <Setter Property="Template">
-                            <Setter.Value><ControlTemplate TargetType="ListBoxItem"><ContentPresenter/></ControlTemplate></Setter.Value>
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <ContentPresenter/>
+                                </ControlTemplate>
+                            </Setter.Value>
                         </Setter>
                     </Style>
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Border Background="#6610283A" BorderBrush="#661C5877" BorderThickness="1"
-                                CornerRadius="11" Padding="12" Margin="0,8,0,8"
+                        <Border Background="#6610283A" BorderBrush="#661C5877"
+                                BorderThickness="1" CornerRadius="11"
+                                Padding="12" Margin="0,7,0,7"
                                 HorizontalAlignment="Left" MaxWidth="820">
                             <StackPanel>
                                 <TextBlock Text="{Binding Author}" FontSize="10"
-                                           Foreground="#55D8FF" FontWeight="SemiBold"/>
+                                           Foreground="#9BBCCB" FontWeight="SemiBold"/>
                                 <TextBlock Text="{Binding Content}" TextWrapping="Wrap"
-                                           FontSize="14" LineHeight="21" Margin="0,5,0,0"
+                                           FontSize="14" LineHeight="21" Margin="0,4,0,0"
                                            Foreground="#EAF7FC"/>
                             </StackPanel>
                         </Border>
@@ -91,26 +67,28 @@
             </ListBox>
         </Grid>
 
-        <TextBlock x:Name="StatusText" Grid.Row="2"
-                   Text="Готов к работе с локальной моделью."
-                   FontSize="10" Foreground="#91AFC4" Margin="4,9,4,7"/>
-        <TextBlock x:Name="AttachmentsText" Grid.Row="3" Text="" FontSize="10"
-                   Foreground="#91AFC4" TextTrimming="CharacterEllipsis" Margin="4,0,4,6"/>
+        <TextBlock x:Name="StatusText" Grid.Row="2" Visibility="Collapsed"/>
+        <TextBlock x:Name="AttachmentsText" Grid.Row="2" Text="" FontSize="10"
+                   Foreground="#91AFC4" TextTrimming="CharacterEllipsis"
+                   Margin="4,8,4,6"/>
 
-        <StackPanel Grid.Row="4">
+        <StackPanel Grid.Row="3">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <Button x:Name="AttachButton" Grid.Column="0" Width="42" Height="44" MinWidth="42" MinHeight="44" Padding="0" Margin="0,0,8,0"
+                <Button x:Name="AttachButton" Grid.Column="0" Width="42" Height="44"
+                        MinWidth="42" MinHeight="44" Padding="0" Margin="0,0,8,0"
                         Background="#12344B" Foreground="#8DEAFF" BorderBrush="#23779D"
                         Click="Attach_Click" PreviewMouseRightButtonDown="AttachButton_Clear"
                         ToolTip="Добавить файлы и папки">
                     <Grid Width="16" Height="16" HorizontalAlignment="Center" VerticalAlignment="Center">
-                        <Border Width="16" Height="2" Background="#8DEAFF" CornerRadius="1" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                        <Border Width="2" Height="16" Background="#8DEAFF" CornerRadius="1" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border Width="16" Height="2" Background="#8DEAFF" CornerRadius="1"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        <Border Width="2" Height="16" Background="#8DEAFF" CornerRadius="1"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"/>
                     </Grid>
                 </Button>
                 <Border Grid.Column="1" Background="#0E2639" BorderBrush="#1E7196"
