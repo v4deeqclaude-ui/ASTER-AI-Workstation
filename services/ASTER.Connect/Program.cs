@@ -109,9 +109,9 @@ app.MapPost("/api/github/pairings", async (HttpContext http, IConfiguration conf
     return Results.Created("/api/github/pairings/" + id, new { pairingId = id, authorizationUrl = url, expiresAtUtc = now.AddMinutes(10), status = "pending" });
 });
 
-app.MapGet("/api/github/pairings/{id}", async (string id, IPairingStore store, string? verifier, CancellationToken ct) =>
+app.MapPost("/api/github/pairings/{id}/status", async (string id, IPairingStore store, PairingStatusRequest request, CancellationToken ct) =>
 {
-    if (verifier is null || verifier.Length != 64 || !verifier.All(Uri.IsHexDigit))
+    if (request.Verifier is null || request.Verifier.Length != 64 || !request.Verifier.All(Uri.IsHexDigit))
         return Results.Problem(title: "Pairing proof required", statusCode: 401);
     var record = await store.GetAsync(id, ct);
     if (record is null || record.ExpiresAtUtc <= DateTimeOffset.UtcNow)
@@ -187,4 +187,4 @@ app.MapGet("/api/github/callback", async (HttpContext http, string? installation
 
 app.Run();
 
-public sealed record PairingStartRequest(string Verifier);
+public sealed record PairingStartRequest(string Verifier);\npublic sealed record PairingStatusRequest(string Verifier);
