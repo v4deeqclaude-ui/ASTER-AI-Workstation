@@ -380,35 +380,35 @@ public sealed class CatalogWorkspaceControl : UserControl
                 return;
             }
             var environmentVariables = existing?.EnvironmentVariables ?? "";
-            var environmentLines = environmentVariables.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-            const string credentialPrefix = "@ASTER_CREDENTIAL:";
-            for (var index = 0; index < environmentLines.Count; index++)
+            try
             {
-                var separator = environmentLines[index].IndexOf('=');
-                if (separator <= 0) continue;
-                var variable = environmentLines[index][..separator].Trim();
-                var value = environmentLines[index][(separator + 1)..].Trim();
-                if (string.IsNullOrEmpty(value) || value.StartsWith(credentialPrefix, StringComparison.Ordinal)) continue;
-                var target = McpSecretStore.Save(name.Text.Trim(), variable, value);
-                environmentLines[index] = variable + "=" + credentialPrefix + target;
-            }
-            environmentVariables = string.Join(Environment.NewLine, environmentLines);
-            if (!string.IsNullOrEmpty(secret.Password))
-            {
-                try
+                var environmentLines = environmentVariables.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+                const string credentialPrefix = "@ASTER_CREDENTIAL:";
+                for (var index = 0; index < environmentLines.Count; index++)
+                {
+                    var separator = environmentLines[index].IndexOf('=');
+                    if (separator <= 0) continue;
+                    var variable = environmentLines[index][..separator].Trim();
+                    var value = environmentLines[index][(separator + 1)..].Trim();
+                    if (string.IsNullOrEmpty(value) || value.StartsWith(credentialPrefix, StringComparison.Ordinal)) continue;
+                    var target = McpSecretStore.Save(name.Text.Trim(), variable, value);
+                    environmentLines[index] = variable + "=" + credentialPrefix + target;
+                }
+                environmentVariables = string.Join(Environment.NewLine, environmentLines);
+                if (!string.IsNullOrEmpty(secret.Password))
                 {
                     var target = McpSecretStore.Save(name.Text.Trim(), envName.Text.Trim(), secret.Password);
                     var lines = environmentVariables.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
                         .Where(line => !line.StartsWith(envName.Text.Trim() + "=", StringComparison.OrdinalIgnoreCase))
                         .ToList();
-                    lines.Add(envName.Text.Trim() + "=@ASTER_CREDENTIAL:" + target);
+                    lines.Add(envName.Text.Trim() + "=" + credentialPrefix + target);
                     environmentVariables = string.Join(Environment.NewLine, lines);
                 }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(dialog, "Не удалось безопасно сохранить секрет.\n\n" + ex.Message, "ASTER · Credential Manager", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(dialog, "Не удалось безопасно сохранить секреты.\\n\\n" + ex.Message, "ASTER · Credential Manager", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
             }
             var servers = ReadMcpServers();
             servers.RemoveAll(x => string.Equals(x.Name, name.Text.Trim(), StringComparison.OrdinalIgnoreCase));
