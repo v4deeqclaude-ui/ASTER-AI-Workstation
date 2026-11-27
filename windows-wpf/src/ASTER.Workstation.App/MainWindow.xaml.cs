@@ -335,6 +335,8 @@ public partial class MainWindow : Window
         }
     }
 
+    public void ReturnToHome() => Home_Click(this, new RoutedEventArgs());
+
     private void ClearProjectView()
     {
         SelectedProjectName.Text = "Проект не выбран";
