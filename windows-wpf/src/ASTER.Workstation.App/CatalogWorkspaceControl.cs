@@ -493,7 +493,9 @@ public sealed class CatalogWorkspaceControl : UserControl
         body.Children.Add(buttons);
         _items.Children.Add(new Border
         {
-            Background = Brush("#111D2A"), BorderBrush = Brush("#294052"), BorderThickness = new Thickness(1),
+            Background = Brush("#111D2A"),
+            BorderBrush = string.Equals(_selectedIntegration, name, StringComparison.OrdinalIgnoreCase) ? Brush("#16C8F5") : Brush("#294052"),
+            BorderThickness = new Thickness(string.Equals(_selectedIntegration, name, StringComparison.OrdinalIgnoreCase) ? 2 : 1),
             CornerRadius = new CornerRadius(9), Padding = new Thickness(14),
             Margin = new Thickness(0, 0, 0, 10), Child = body
         });
