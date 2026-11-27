@@ -40,6 +40,7 @@ public partial class MainWindow : Window
             WorkspaceActivityLog.Write("PROJECTS", $"Загружено проектов: {_projects.Count}.");
             WorkspaceActivityLog.Write("ASTER", "Приложение готово к работе.");
             SetStatus("Готово. Проекты и настройки хранятся локально.");
+            Home_Click(this, new RoutedEventArgs());
         }
         catch (Exception ex)
         {
@@ -211,31 +212,34 @@ public partial class MainWindow : Window
 
     private void Home_Click(object sender, RoutedEventArgs e)
     {
-        EmbeddedPage.Content = null;
-        EmbeddedPage.Visibility = Visibility.Collapsed;
-        HomePage.Visibility = Visibility.Visible;
-        PageTitle.Text = "Главная";
-        PageSubtitle.Text = "Твоя рабочая среда для создания игр.";
-        SetStatus("Главная рабочая область ASTER.");
-        WorkspaceActivityLog.Write("NAVIGATION", "Открыт раздел «Главная».");
+        SetActiveNavigation(NavHome);
+        OpenAiWorkspace("HOME", "Главная",
+            "Ты — ASTER, универсальный интеллектуальный помощник. Помогай пользователю с любыми повседневными и профессиональными вопросами: объясняй, анализируй, планируй, обучай, помогай с текстами, технологиями и творческими задачами. Отвечай на русском, если пользователь пишет по-русски. Будь честен о своих возможностях и не утверждай, что выполнял действия вне приложения.");
+        SetStatus("Главный ИИ-чат ASTER готов к работе.");
     }
 
     private void Projects_Click(object sender, RoutedEventArgs e)
     {
+        SetActiveNavigation(NavProjects);
+        EmbeddedPage.Content = null;
+        EmbeddedPage.Visibility = Visibility.Collapsed;
+        HomePage.Visibility = Visibility.Visible;
         PageTitle.Text = "Проекты";
-        PageSubtitle.Text = "Добавляй существующие папки и переключайся между проектами.";
-        SetStatus("Управление проектами доступно в версии 0.1.");
+        PageSubtitle.Text = "Твои рабочие пространства, папки и файлы проектов.";
+        SetStatus("Открыт центр управления проектами.");
         WorkspaceActivityLog.Write("NAVIGATION", "Открыт раздел «Проекты».");
     }
 
     private void Applications_Click(object sender, RoutedEventArgs e)
     {
+        SetActiveNavigation(NavApplications);
         OpenAiWorkspace("APPS", "ПРИЛОЖЕНИЯ",
             "Ты — ASTER App Creator. Помогай проектировать и создавать новые приложения: сначала уточняй назначение и платформу, затем предлагай архитектуру, интерфейс, структуру проекта и пошаговый план реализации. Учитывай, что пользователь предпочитает готовые файлы и простые инструкции. Не утверждай, что файлы созданы или приложение собрано, если это не подтверждено.");
     }
 
     private void Plugin_Click(object sender, RoutedEventArgs e)
     {
+        SetActiveNavigation(NavPlugin);
         HomePage.Visibility = Visibility.Collapsed;
         EmbeddedPage.Content = new CatalogWorkspaceControl(CatalogKind.Plugin);
         EmbeddedPage.Visibility = Visibility.Visible;
@@ -244,6 +248,7 @@ public partial class MainWindow : Window
 
     private void Skill_Click(object sender, RoutedEventArgs e)
     {
+        SetActiveNavigation(NavSkill);
         HomePage.Visibility = Visibility.Collapsed;
         EmbeddedPage.Content = new CatalogWorkspaceControl(CatalogKind.Skill);
         EmbeddedPage.Visibility = Visibility.Visible;
@@ -252,18 +257,21 @@ public partial class MainWindow : Window
 
     private void Video_Click(object sender, RoutedEventArgs e)
     {
+        SetActiveNavigation(NavVideo);
         OpenAiWorkspace("VIDEO", "ВИДЕО",
             "Ты — помощник ASTER для подготовки видеозадач. Превращай обычное описание пользователя в подробный профессиональный промт для генерации или редактирования видео: сцена, объект, действие, камера, движение, свет, стиль, длительность, формат и ограничения. Не заявляй, что видео уже создано: пока готовь промт и уточняй важные детали.");
     }
 
     private void Photo_Click(object sender, RoutedEventArgs e)
     {
+        SetActiveNavigation(NavPhoto);
         OpenAiWorkspace("PHOTO", "ФОТО",
             "Ты — помощник ASTER для подготовки задач с изображениями. Превращай запрос пользователя в точный промт для создания или редактирования изображения: субъект, композиция, поза, окружение, освещение, стиль, детали, сохранение важных особенностей и негативные ограничения. Не заявляй, что изображение уже обработано: пока готовь промт и уточняй только необходимые детали.");
     }
 
     private void Music_Click(object sender, RoutedEventArgs e)
     {
+        SetActiveNavigation(NavMusic);
         OpenAiWorkspace("MUSIC", "МУЗЫКА",
             "Ты — помощник ASTER для подготовки музыкальных задач. Превращай запрос пользователя в подробное техническое задание и промт: жанр, настроение, темп, инструменты, вокал, структура, длительность, динамика, микс и ограничения. Не заявляй, что музыка уже создана: пока готовь промт и уточняй важные детали.");
     }
@@ -301,11 +309,30 @@ public partial class MainWindow : Window
 
     private void Settings_Click(object sender, RoutedEventArgs e)
     {
+        SetActiveNavigation(NavSettings);
         PageTitle.Text = "Настройки";
         PageSubtitle.Text = "Параметры подключения AI-провайдера."; 
         WorkspaceActivityLog.Write("NAVIGATION", "Открыты настройки приложения.");
         var window = new SettingsWindow { Owner = this };
         window.ShowDialog();
+    }
+
+    private void SetActiveNavigation(Button active)
+    {
+        var buttons = new[] { NavHome, NavProjects, NavPlugin, NavSkill, NavPhoto, NavVideo, NavApplications, NavMusic, NavSettings };
+        foreach (var button in buttons)
+        {
+            button.Background = button == active
+                ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(20, 61, 82))
+                : System.Windows.Media.Brushes.Transparent;
+            button.Foreground = button == active
+                ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(168, 241, 255))
+                : new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(234, 247, 252));
+            button.BorderBrush = button == active
+                ? new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(22, 200, 245))
+                : System.Windows.Media.Brushes.Transparent;
+            button.BorderThickness = button == active ? new Thickness(1) : new Thickness(0);
+        }
     }
 
     private void ClearProjectView()
