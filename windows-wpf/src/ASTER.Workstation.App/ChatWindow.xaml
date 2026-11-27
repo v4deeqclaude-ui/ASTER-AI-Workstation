@@ -11,15 +11,23 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,14">
-            <TextBlock x:Name="SectionEyebrow" Text="ASTER AI WORKSTATION" FontSize="10"
-                       Foreground="#16C8F5" FontWeight="SemiBold"/>
-            <TextBlock x:Name="SectionTitleText" Text="ИИ-чат" FontSize="24"
-                       FontWeight="SemiBold" Margin="0,4,0,0"/>
-            <TextBlock x:Name="SectionSubtitleText"
-                       Text="Локальный ИИ Ollama · переписка хранится на этом компьютере"
-                       FontSize="11" Foreground="#91A7B5" Margin="0,4,0,0"/>
-        </StackPanel>
+        <Grid Grid.Row="0" Margin="0,0,0,14">
+            <StackPanel HorizontalAlignment="Left">
+                <TextBlock x:Name="SectionEyebrow" Text="ASTER AI WORKSTATION" FontSize="10"
+                           Foreground="#16C8F5" FontWeight="SemiBold"/>
+                <TextBlock x:Name="SectionTitleText" Text="ИИ-чат" FontSize="24"
+                           FontWeight="SemiBold" Margin="0,4,0,0"/>
+                <TextBlock x:Name="SectionSubtitleText"
+                           Text="Локальный ИИ Ollama · переписка хранится на этом компьютере"
+                           FontSize="11" Foreground="#91A7B5" Margin="0,4,0,0"/>
+            </StackPanel>
+            <Button x:Name="CloseWorkspaceButton" Content="×" Width="36" Height="36"
+                    HorizontalAlignment="Right" VerticalAlignment="Top" Padding="0"
+                    FontSize="22" FontWeight="Light" Background="#12283A"
+                    Foreground="#A8F1FF" BorderBrush="#24516A"
+                    HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
+                    Click="CloseWorkspace_Click" ToolTip="Закрыть раздел"/>
+        </Grid>
 
         <Grid Grid.Row="1">
             <Canvas Width="360" Height="420" HorizontalAlignment="Center"
@@ -101,8 +109,8 @@
             </Grid.ColumnDefinitions>
             <Button x:Name="AttachButton" Grid.Column="0" Content="＋" FontSize="20" Width="44" Margin="0,0,8,0"
                     Background="#173044" Foreground="#A8F1FF" BorderBrush="#24516A" Click="Attach_Click" PreviewMouseRightButtonDown="AttachButton_Clear" ToolTip="Добавить файлы и папки; правый клик — очистить вложения"/>
-            <Border Grid.Column="1" Background="#111D2A" BorderBrush="#24516A"
-                    BorderThickness="1" CornerRadius="10" Padding="4">
+            <Border Grid.Column="1" Background="#102235" BorderBrush="#24516A"
+                    BorderThickness="1" CornerRadius="14" Padding="5">
                 <TextBox x:Name="MessageInput" MinHeight="48" MaxHeight="140"
                          AcceptsReturn="True" TextWrapping="Wrap"
                          VerticalScrollBarVisibility="Auto" Padding="10,8"
