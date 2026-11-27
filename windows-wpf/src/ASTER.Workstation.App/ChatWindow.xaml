@@ -1,7 +1,7 @@
 <UserControl x:Class="ASTER.Workstation.App.ChatWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Background="{StaticResource WindowBrush}" Foreground="{StaticResource TextBrush}">
+        Background="#090F18" Foreground="#EAF7FC">
     <Grid Margin="22">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -9,39 +9,103 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0" Margin="0,0,0,16">
-            <TextBlock Text="AI-АССИСТЕНТ ASTER" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
-            <TextBlock Text="Рабочий диалог" FontSize="23" FontWeight="SemiBold" Margin="0,4,0,0"/>
-            <TextBlock Text="Локальный ИИ Ollama · переписка хранится на этом компьютере" FontSize="11" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,0"/>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,14">
+            <TextBlock x:Name="SectionEyebrow" Text="ASTER AI WORKSTATION" FontSize="10"
+                       Foreground="#16C8F5" FontWeight="SemiBold"/>
+            <TextBlock x:Name="SectionTitleText" Text="ИИ-чат" FontSize="24"
+                       FontWeight="SemiBold" Margin="0,4,0,0"/>
+            <TextBlock x:Name="SectionSubtitleText"
+                       Text="Локальный ИИ Ollama · переписка хранится на этом компьютере"
+                       FontSize="11" Foreground="#91A7B5" Margin="0,4,0,0"/>
         </StackPanel>
-        <Border Grid.Row="1" Background="{StaticResource PanelBrush}" BorderBrush="#2A323D" BorderThickness="1" CornerRadius="10" Padding="12">
-            <ListBox x:Name="MessagesList" ScrollViewer.VerticalScrollBarVisibility="Auto">
+
+        <Grid Grid.Row="1">
+            <Canvas Width="330" Height="410" HorizontalAlignment="Center"
+                    VerticalAlignment="Center" IsHitTestVisible="False" Opacity="0.075">
+                <Ellipse Canvas.Left="112" Canvas.Top="18" Width="106" Height="106"
+                         Stroke="#16C8F5" StrokeThickness="4"/>
+                <Ellipse Canvas.Left="137" Canvas.Top="57" Width="13" Height="13" Fill="#A8F1FF"/>
+                <Ellipse Canvas.Left="180" Canvas.Top="57" Width="13" Height="13" Fill="#A8F1FF"/>
+                <Path Data="M 140,93 Q 165,112 190,93" Stroke="#16C8F5"
+                      StrokeThickness="3" Fill="Transparent"/>
+                <Border Canvas.Left="87" Canvas.Top="144" Width="156" Height="142"
+                        CornerRadius="34" BorderBrush="#16C8F5" BorderThickness="4"
+                        Background="#102A39"/>
+                <Path Data="M 88,174 C 50,174 34,208 27,265 M 242,174 C 280,174 296,208 303,265"
+                      Stroke="#16C8F5" StrokeThickness="15" StrokeStartLineCap="Round"
+                      StrokeEndLineCap="Round" Fill="Transparent"/>
+                <Path Data="M 125,286 L 111,374 M 205,286 L 219,374"
+                      Stroke="#16C8F5" StrokeThickness="22" StrokeStartLineCap="Round"
+                      StrokeEndLineCap="Round" Fill="Transparent"/>
+                <Path Data="M 117,204 L 213,204 M 117,231 L 213,231"
+                      Stroke="#A8F1FF" StrokeThickness="4" Fill="Transparent"/>
+                <Ellipse Canvas.Left="154" Canvas.Top="163" Width="22" Height="22"
+                         Stroke="#A8F1FF" StrokeThickness="3"/>
+                <Line X1="165" Y1="0" X2="165" Y2="18" Stroke="#16C8F5" StrokeThickness="3"/>
+                <Ellipse Canvas.Left="157" Canvas.Top="0" Width="16" Height="16"
+                         Stroke="#A8F1FF" StrokeThickness="3"/>
+            </Canvas>
+
+            <ListBox x:Name="MessagesList" Background="Transparent" BorderThickness="0"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     SelectionMode="Single">
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="Background" Value="Transparent"/>
+                        <Setter Property="BorderThickness" Value="0"/>
+                        <Setter Property="Padding" Value="0"/>
+                        <Setter Property="Margin" Value="0"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListBoxItem">
+                                    <ContentPresenter/>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <Border Background="{Binding BubbleBrush}" CornerRadius="8" Padding="12" Margin="0,4">
-                            <StackPanel>
-                                <TextBlock Text="{Binding Author}" FontSize="10" Foreground="{StaticResource AccentBrush}" FontWeight="SemiBold"/>
-                                <TextBlock Text="{Binding Content}" TextWrapping="Wrap" FontSize="13" Margin="0,5,0,0"/>
-                            </StackPanel>
-                        </Border>
+                        <StackPanel Margin="0,11,0,11" MaxWidth="900"
+                                    HorizontalAlignment="Left">
+                            <TextBlock Text="{Binding Author}" FontSize="10"
+                                       Foreground="#16C8F5" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding Content}" TextWrapping="Wrap"
+                                       FontSize="14" LineHeight="21" Margin="0,5,0,0"
+                                       Foreground="#EAF2F7"/>
+                        </StackPanel>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
-        </Border>
-        <TextBlock x:Name="StatusText" Grid.Row="2" Text="Готов к работе с локальной моделью." FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="2,10,2,8"/>
+        </Grid>
+
+        <TextBlock x:Name="StatusText" Grid.Row="2"
+                   Text="Готов к работе с локальной моделью."
+                   FontSize="10" Foreground="#91A7B5" Margin="2,10,2,8"/>
+
         <Grid Grid.Row="3">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <TextBox x:Name="MessageInput" Grid.Column="0" MinHeight="52" MaxHeight="120" AcceptsReturn="True"
-                     TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Padding="12"
-                     Background="#202630" Foreground="{StaticResource TextBrush}" BorderBrush="#394453"
-                     FontSize="13" VerticalContentAlignment="Center"
-                     KeyDown="MessageInput_KeyDown"/>
-            <Button x:Name="SendButton" Grid.Column="1" Content="Отправить" Margin="10,0,0,0"
-                    Padding="18,10" Background="{StaticResource AccentBrush}" Foreground="#17191D"
-                    BorderBrush="{StaticResource AccentBrush}" FontWeight="SemiBold" Click="Send_Click"/>
+            <Border Grid.Column="0" Background="#111D2A" BorderBrush="#24516A"
+                    BorderThickness="1" CornerRadius="10" Padding="4">
+                <TextBox x:Name="MessageInput" MinHeight="48" MaxHeight="140"
+                         AcceptsReturn="True" TextWrapping="Wrap"
+                         VerticalScrollBarVisibility="Auto" Padding="10,8"
+                         Background="Transparent" Foreground="#EAF7FC"
+                         BorderThickness="0" FontSize="13"
+                         VerticalContentAlignment="Center"
+                         KeyDown="MessageInput_KeyDown"/>
+            </Border>
+            <Button x:Name="SendButton" Grid.Column="1" Content="Отправить"
+                    Margin="10,0,0,0" Padding="18,10"
+                    Background="#16C8F5" Foreground="#06131C"
+                    BorderBrush="#16C8F5" FontWeight="SemiBold"
+                    Click="Send_Click"/>
         </Grid>
     </Grid>
 </UserControl>
