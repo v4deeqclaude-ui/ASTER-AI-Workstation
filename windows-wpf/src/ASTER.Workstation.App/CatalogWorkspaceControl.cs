@@ -47,7 +47,7 @@ public sealed class CatalogWorkspaceControl : UserControl
         actions.Children.Add(add);
         if (kind == CatalogKind.Plugin)
         {
-            var desktop = new Button { Content = "＋  Добавить ChatGPT Desktop", Padding = new Thickness(14, 9, 14, 9), Margin = new Thickness(9, 0, 0, 0) };
+            var desktop = new Button { Content = "＋  Добавить", Padding = new Thickness(14, 9, 14, 9), Margin = new Thickness(9, 0, 0, 0) };
             desktop.Click += (_, _) => AddDesktopApp();
             actions.Children.Add(desktop);
         }
@@ -110,13 +110,13 @@ public sealed class CatalogWorkspaceControl : UserControl
 
     private void AddDesktopApp()
     {
-        var dialog = new OpenFileDialog { Title = "Выбери установленный ChatGPT Desktop", Filter = "Приложения (*.exe)|*.exe", CheckFileExists = true };
+        var dialog = new OpenFileDialog { Title = "Выбери программу на компьютере", Filter = "Приложения (*.exe)|*.exe", CheckFileExists = true };
         if (dialog.ShowDialog(Window.GetWindow(this)) != true) return;
         var entries = ReadEntries();
-        entries.Add(new CatalogEntry { Name = "ChatGPT Desktop", Description = "Зарегистрированное локальное приложение", Details = dialog.FileName, EntryType = "desktop-app" });
+        entries.Add(new CatalogEntry { Name = Path.GetFileNameWithoutExtension(dialog.FileName), Description = "Добавленная программа (зарегистрирован путь к .exe)", Details = dialog.FileName, EntryType = "desktop-app" });
         WriteEntries(entries);
         Refresh();
-        MessageBox.Show(Window.GetWindow(this), "ChatGPT Desktop добавлен в каталог как внешнее приложение. Это регистрация пути к программе, а не подключение к внутренним функциям или API ChatGPT.", "ASTER — PLUGIN", MessageBoxButton.OK, MessageBoxImage.Information);
+        MessageBox.Show(Window.GetWindow(this), "Программа добавлена в каталог. Сохранён путь к .exe. Это регистрация программы: ASTER пока не получает автоматический доступ к её внутренним функциям.", "ASTER — PLUGIN", MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
     private void Refresh()
