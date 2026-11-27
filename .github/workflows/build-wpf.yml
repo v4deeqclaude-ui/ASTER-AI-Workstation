@@ -19,6 +19,7 @@ on:
       - fix/aster-oauth-diagnostics-2026-11
       - feature/aster-workspace-hierarchy-v2
       - feature/aster-v04-deep-space
+      - feature/aster-v05-plugin-marketplace
   workflow_dispatch:
 
 permissions:
