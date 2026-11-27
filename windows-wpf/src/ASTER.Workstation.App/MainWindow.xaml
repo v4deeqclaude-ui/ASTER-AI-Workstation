@@ -17,15 +17,13 @@
                     <TextBlock Text="AI WORKSTATION" FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="1,0,0,27" />
                     <TextBlock Text="РАБОЧЕЕ ПРОСТРАНСТВО" FontSize="9" Foreground="{StaticResource MutedBrush}" Margin="7,0,0,9" />
                     <Button Content="⌂   Главная" HorizontalContentAlignment="Left" Background="#29313D" BorderThickness="0" Margin="0,0,0,5" Click="Home_Click" />
-                    <Button Content="▣   Проекты" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Projects_Click" />
-                    <Button Content="◇   Приложения" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Applications_Click" />
-                    <Button Content="◷   История" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="History_Click" />
-                    <Button Content="✦   ИИ-чат" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Chat_Click" />
-                    <Button Content="◇   SKILL" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Skill_Click" />
-                    <Button Content="▧   ВИДЕО" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Video_Click" />
+                    <Button Content="◇   PLUGIN" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Plugin_Click" />
+                    <Button Content="✦   SKILL" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Skill_Click" />
+                    <Border Height="1" Background="#2A313B" Margin="4,9,4,9" />
                     <Button Content="▣   ФОТО" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Photo_Click" />
+                    <Button Content="▧   ВИДЕО" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Video_Click" />
+                    <Button Content="◇   ПРИЛОЖЕНИЯ" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Applications_Click" />
                     <Button Content="♫   МУЗЫКА" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Music_Click" />
-                    <Button Content="⌨   Командная строка" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Terminal_Click" />
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Bottom">
                     <Border Height="1" Background="#2A313B" Margin="0,0,0,13" />
