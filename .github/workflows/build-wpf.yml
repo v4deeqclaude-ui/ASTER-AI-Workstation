@@ -14,6 +14,8 @@ on:
       - feature/aster-v07-github-app-connect
     paths:
       - 'windows-wpf/**'
+      - 'services/ASTER.Connect/**'
+      - 'services/ASTER.Connect.Tests/**'
       - '.github/workflows/build-wpf.yml'
   pull_request:
     branches:
@@ -40,6 +42,10 @@ jobs:
           dotnet-version: '10.0.x'
       - name: Restore WPF dependencies
         run: dotnet restore windows-wpf/ASTER.Workstation.sln
+      - name: Run ASTER Connect security tests
+        run: dotnet test services/ASTER.Connect.Tests/ASTER.Connect.Tests.csproj --configuration Release
+      - name: Publish ASTER Connect service
+        run: dotnet publish services/ASTER.Connect/ASTER.Connect.csproj --configuration Release --output services/ASTER.Connect/artifacts/publish
       - name: Publish Windows x64 application
         run: dotnet publish windows-wpf/src/ASTER.Workstation.App/ASTER.Workstation.App.csproj --configuration Release --runtime win-x64 --self-contained true --output windows-wpf/artifacts/publish
       - name: Verify Ollama client is included
@@ -55,5 +61,12 @@ jobs:
         with:
           name: ASTER-AI-Workstation-0.7-github-app-connect-win-x64
           path: windows-wpf/artifacts/publish/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload ASTER Connect service
+        uses: actions/upload-artifact@v4
+        with:
+          name: ASTER-Connect-0.7-service
+          path: services/ASTER.Connect/artifacts/publish/
           if-no-files-found: error
           retention-days: 14
