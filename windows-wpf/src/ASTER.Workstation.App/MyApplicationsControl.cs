@@ -81,6 +81,16 @@ public sealed class MyApplicationsControl : UserControl
     private void SaveApps(List<DesktopApplicationEntry> apps) =>
         File.WriteAllText(_appsFile, JsonSerializer.Serialize(apps, new JsonSerializerOptions { WriteIndented = true }));
 
+    private List<McpServerEntry> ReadMarketplaceConnections()
+    {
+        try
+        {
+            if (!File.Exists(_mcpFile)) return new();
+            return JsonSerializer.Deserialize<List<McpServerEntry>>(File.ReadAllText(_mcpFile)) ?? new();
+        }
+        catch { return new(); }
+    }
+
     private List<string> ReadMcpServers()
     {
         try
@@ -151,11 +161,12 @@ public sealed class MyApplicationsControl : UserControl
     private void Refresh()
     {
         var apps = ReadApps();
+        var marketplaceApps = ReadMarketplaceConnections();
         _items.Children.Clear();
-        _count.Text = $"{apps.Count} приложений";
-        if (apps.Count == 0)
+        _count.Text = $"{apps.Count + marketplaceApps.Count} подключений";
+        if (apps.Count == 0 && marketplaceApps.Count == 0)
         {
-            _items.Children.Add(new TextBlock { Text = "Здесь пока пусто. Нажми «Добавить приложение с компьютера», чтобы выбрать .exe-файл.",
+            _items.Children.Add(new TextBlock { Text = "Здесь пока пусто. Добавь программу с компьютера или подключи MCP-сервер из Marketplace.",
                 Foreground = Brush("#91A7B5"), FontSize = 13, Margin = new Thickness(8, 18, 0, 0) });
             return;
         }
@@ -194,6 +205,20 @@ public sealed class MyApplicationsControl : UserControl
             actions.Children.Add(remove);
             Grid.SetColumn(actions, 1); Grid.SetRowSpan(actions, 3); layout.Children.Add(actions);
             card.Child = layout;
+            _items.Children.Add(card);
+        }
+
+        foreach (var server in marketplaceApps)
+        {
+            var card = new Border { Background = Brush("#101F2D"), BorderBrush = Brush("#24465D"),
+                BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(15), Margin = new Thickness(0,0,0,10) };
+            var panel = new StackPanel();
+            panel.Children.Add(new TextBlock { Text = server.Name, FontSize = 15, FontWeight = FontWeights.SemiBold, Foreground = Brush("#EAF7FC") });
+            panel.Children.Add(new TextBlock { Text = "MARKETPLACE · MCP-СЕРВЕР", FontSize = 9, Foreground = Brush("#16C8F5"), Margin = new Thickness(0,5,0,0) });
+            panel.Children.Add(new TextBlock { Text = $"{server.Command} {server.Arguments}".Trim(), FontSize = 10, Foreground = Brush("#91A7B5"), TextTrimming = TextTrimming.CharacterEllipsis, Margin = new Thickness(0,5,0,0) });
+            panel.Children.Add(new TextBlock { Text = server.Enabled ? "Подключён · доступен ИИ-чату как источник инструментов" : "Сохранён, но отключён",
+                FontSize = 11, Foreground = server.Enabled ? Brush("#83D7B0") : Brush("#D6B36A"), Margin = new Thickness(0,8,0,0) });
+            card.Child = panel;
             _items.Children.Add(card);
         }
     }
