@@ -78,7 +78,9 @@ internal static class McpSecretStore
         finally
         {
             CryptographicOperations.ZeroMemory(blob);
-            Marshal.ZeroFreeHGlobal(memory);
+            for (var index = 0; index < blob.Length; index++)
+                Marshal.WriteByte(memory, index, 0);
+            Marshal.FreeHGlobal(memory);
         }
     }
 
