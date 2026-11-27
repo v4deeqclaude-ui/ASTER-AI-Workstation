@@ -2,7 +2,13 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddDataProtection();
+var keyRingPath = builder.Configuration["DataProtection:KeyRingPath"];
+var dataProtection = builder.Services.AddDataProtection();
+if (!string.IsNullOrWhiteSpace(keyRingPath))
+{
+    Directory.CreateDirectory(keyRingPath);
+    dataProtection.PersistKeysToFileSystem(new DirectoryInfo(keyRingPath));
+}
 
 var app = builder.Build();
 var stateProtector = app.Services.GetRequiredService<IDataProtectionProvider>()
@@ -26,9 +32,12 @@ app.MapGet("/health/ready", (IConfiguration configuration) =>
 {
     var appSlug = configuration["GitHubApp:Slug"];
     var publicBaseUrl = configuration["PublicBaseUrl"];
+    var keyRingPath = configuration["DataProtection:KeyRingPath"];
     var missing = new List<string>();
     if (string.IsNullOrWhiteSpace(appSlug)) missing.Add("GitHubApp:Slug");
-    if (string.IsNullOrWhiteSpace(publicBaseUrl)) missing.Add("PublicBaseUrl");
+    if (!Uri.TryCreate(publicBaseUrl, UriKind.Absolute, out var publicUri) || publicUri.Scheme != Uri.UriSchemeHttps)
+        missing.Add("PublicBaseUrl (must be an HTTPS URL)");
+    if (string.IsNullOrWhiteSpace(keyRingPath)) missing.Add("DataProtection:KeyRingPath (persistent storage required)");
 
     return Results.Json(new
     {
@@ -42,7 +51,10 @@ app.MapGet("/health/ready", (IConfiguration configuration) =>
 
 app.MapGet("/api/github/status", (IConfiguration configuration) =>
 {
-    var configured = !string.IsNullOrWhiteSpace(configuration["GitHubApp:Slug"]);
+    var configured = !string.IsNullOrWhiteSpace(configuration["GitHubApp:Slug"]) &&
+                     Uri.TryCreate(configuration["PublicBaseUrl"], UriKind.Absolute, out var publicUri) &&
+                     publicUri.Scheme == Uri.UriSchemeHttps &&
+                     !string.IsNullOrWhiteSpace(configuration["DataProtection:KeyRingPath"]);
     return Results.Ok(new
     {
         provider = "github",
@@ -60,7 +72,12 @@ app.MapGet("/api/github/status", (IConfiguration configuration) =>
 app.MapGet("/api/github/connect", (HttpContext http, IConfiguration configuration) =>
 {
     var slug = configuration["GitHubApp:Slug"];
-    if (string.IsNullOrWhiteSpace(slug))
+    var publicBaseUrl = configuration["PublicBaseUrl"];
+    var keyRingPath = configuration["DataProtection:KeyRingPath"];
+    if (string.IsNullOrWhiteSpace(slug) ||
+        !Uri.TryCreate(publicBaseUrl, UriKind.Absolute, out var publicUri) ||
+        publicUri.Scheme != Uri.UriSchemeHttps ||
+        string.IsNullOrWhiteSpace(keyRingPath))
         return Results.Problem(
             title: "GitHub App is not configured",
             detail: "ASTER Connect needs the GitHub App slug before it can open the official installation page.",
@@ -77,7 +94,7 @@ app.MapGet("/api/github/connect", (HttpContext http, IConfiguration configuratio
     http.Response.Cookies.Append("aster_github_install_state", protectedState, new CookieOptions
     {
         HttpOnly = true,
-        Secure = http.Request.IsHttps,
+        Secure = publicUri.Scheme == Uri.UriSchemeHttps,
         SameSite = SameSiteMode.Lax,
         IsEssential = true,
         MaxAge = TimeSpan.FromMinutes(10),
