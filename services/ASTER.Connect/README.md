@@ -8,10 +8,12 @@ ASP.NET Core service for official GitHub App installation and future repository 
 - `GET /health/ready` — reports whether the GitHub App slug is configured.
 - `GET /api/github/status` — reports installation-flow and repository-access status separately.
 - `GET /api/github/connect` — redirects to the official GitHub App installation page.
-- `GET /api/github/callback` — validates the one-time anti-forgery state cookie and GitHub installation callback parameters.
-- Encrypted pairing-store infrastructure — persists short-lived pairing records using ASP.NET Core Data Protection, with atomic file replacement and a process-local concurrency gate. Pairing HTTP endpoints and desktop account binding are not implemented yet.
+- `GET /api/github/callback` — validates the one-time anti-forgery state cookie, resolves its pending pairing, and marks the pairing as `installed`.
+- `POST /api/github/pairings` — creates a 10-minute desktop pairing request from a 32-byte random verifier and returns the official GitHub App installation URL.
+- `POST /api/github/pairings/{id}/status` — reports `pending` or `installed` after verifying the desktop-held verifier in the request body.
+- Encrypted pairing-store infrastructure — persists short-lived pairing records using ASP.NET Core Data Protection, with atomic file replacement and a process-local concurrency gate. The pairing endpoints can now create a request and report that GitHub installation callback was received. They do not yet redeem a one-time completion ticket, bind to an authenticated ASTER account, exchange installation tokens, or expose repositories.
 
-The callback does not yet exchange an installation token, persist an installation, or expose repositories. The encrypted pairing store is infrastructure only; it is not yet used by a completed desktop pairing flow. It confirms only that GitHub returned a valid installation callback with a matching short-lived protected state. The API continues to report `not_connected` until the next stage is complete.
+The callback stores the installation ID in the encrypted pairing record, but does not yet exchange an installation token, bind the installation to an authenticated ASTER account, or expose repositories. The encrypted pairing store is infrastructure only; it is not yet used by a completed desktop pairing flow. It confirms only that GitHub returned a valid installation callback with a matching short-lived protected state. The API continues to report `not_connected` until the next stage is complete.
 
 ## Server configuration
 
@@ -37,7 +39,7 @@ The GitHub App should initially request only read-only repository metadata and c
 - No private key, client secret, or installation token is included in the desktop app or source control.
 - The callback deliberately does not claim that a repository connection is complete.
 
-The GitHub installation flow requires a persistent private volume for the Data Protection key ring. Mount a durable private volume at `/data`, set `DataProtection__KeyRingPath=/data/aster-key-ring` and `PairingStore__FilePath=/data/aster-pairings/pairings.dat`. Without this, `/health/ready` remains unavailable and `/api/github/connect` refuses to start. The current file store is single-instance only: it uses a process-local lock and is not safe for multiple service replicas or concurrent hosts sharing the same file. Do not scale horizontally. Before production or multi-instance deployment, replace it with a transactional database-backed store supporting atomic one-time redemption, tenant isolation, expiry cleanup and encryption/key management.
+The GitHub installation flow requires a persistent private volume for the Data Protection key ring. Mount a durable private volume at `/data`, set `DataProtection__KeyRingPath=/data/aster-key-ring` and `PairingStore__FilePath=/data/aster-pairings/pairings.dat`. Without this, `/health/ready` remains unavailable and `/api/github/connect` refuses to start. The desktop verifier must be 32 cryptographically random bytes encoded as 64 hex characters; send it only in HTTPS request bodies, never in URLs or logs. Pairing status is queried with POST so the verifier is not placed in query strings. The current file store is single-instance only: it uses a process-local lock and is not safe for multiple service replicas or concurrent hosts sharing the same file. Do not scale horizontally. Before production or multi-instance deployment, replace it with a transactional database-backed store supporting atomic one-time redemption, tenant isolation, expiry cleanup and encryption/key management.
 
 ## Deployment
 
