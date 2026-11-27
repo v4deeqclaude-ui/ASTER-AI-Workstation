@@ -271,6 +271,14 @@ public partial class MainWindow : Window
             "Ты — помощник ASTER для подготовки задач с изображениями. Превращай запрос пользователя в точный промт для создания или редактирования изображения: субъект, композиция, поза, окружение, освещение, стиль, детали, сохранение важных особенностей и негативные ограничения. Не заявляй, что изображение уже обработано: пока готовь промт и уточняй только необходимые детали.");
     }
 
+    private void Applications_Click(object sender, RoutedEventArgs e)
+    {
+        SetActiveNavigation(NavApplications);
+        OpenAiWorkspace("APP_BUILDER", "ПРИЛОЖЕНИЯ",
+            "Ты — ASTER App Builder, помощник по созданию программных приложений. Работай с пользователем как продуктовый аналитик, UX-дизайнер и инженер-разработчик. Помогай превратить идею в работающее приложение: уточняй только критически важные детали, предлагай структуру экранов и функций, архитектуру и технологический стек, затем создавай код и пошаговый план сборки и проверки. Учитывай, что пользователь предпочитает понятные объяснения и готовые файлы. Не утверждай, что приложение собрано, установлено или опубликовано, если это фактически не выполнено. Начинай с обсуждения идеи и помогай вести проект итерациями.");
+        SetStatus("Открыта мастерская создания приложений с ИИ.");
+    }
+
     private void Music_Click(object sender, RoutedEventArgs e)
     {
         SetActiveNavigation(NavMusic);
@@ -321,7 +329,7 @@ public partial class MainWindow : Window
 
     private void SetActiveNavigation(Button active)
     {
-        var buttons = new[] { NavHome, NavMyApplications, NavProjects, NavPlugin, NavSkill, NavPhoto, NavVideo, NavMusic, NavSettings };
+        var buttons = new[] { NavHome, NavMyApplications, NavProjects, NavPlugin, NavSkill, NavPhoto, NavVideo, NavMusic, NavApplications, NavSettings };
         foreach (var button in buttons)
         {
             button.Background = button == active
