@@ -327,7 +327,7 @@ public sealed class CatalogWorkspaceControl : UserControl
         var command = Field("КОМАНДА ЗАПУСКА (для STDIO)", existing?.Command ?? template?.Command ?? "npx");
         var args = Field("АРГУМЕНТЫ КОМАНДЫ (для STDIO)", existing?.Arguments ?? template?.Arguments ?? "", true);
         var savedEnvironmentName = (existing?.EnvironmentVariables ?? "")
-            .Split(new[] { '\\r', '\\n' }, StringSplitOptions.RemoveEmptyEntries)
+            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
             .Select(line => line.Split('=', 2)[0].Trim())
             .FirstOrDefault();
         var envName = Field("ИМЯ СЕКРЕТНОЙ ПЕРЕМЕННОЙ (необязательно)", savedEnvironmentName ?? "", false);
