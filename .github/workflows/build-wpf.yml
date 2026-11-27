@@ -15,6 +15,7 @@ on:
   pull_request:
     branches:
       - fix/aster-oauth-diagnostics-2026-11
+      - feature/aster-workspace-hierarchy-v2
   workflow_dispatch:
 
 permissions:
