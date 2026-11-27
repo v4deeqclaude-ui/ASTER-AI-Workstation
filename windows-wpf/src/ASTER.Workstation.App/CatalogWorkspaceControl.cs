@@ -27,6 +27,9 @@ public sealed class McpServerEntry
     public string TransportType { get; set; } = "stdio";
     public string Endpoint { get; set; } = "";
     public bool Enabled { get; set; } = true;
+    public bool LastCheckSucceeded { get; set; }
+    public DateTime? LastCheckedUtc { get; set; }
+    public int LastToolCount { get; set; }
 }
 
 public sealed class CatalogWorkspaceControl : UserControl
@@ -343,7 +346,9 @@ public sealed class CatalogWorkspaceControl : UserControl
             .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
             .Select(line => line.Split('=', 2)[0].Trim())
             .FirstOrDefault();
-        var envName = Field("ИМЯ СЕКРЕТНОЙ ПЕРЕМЕННОЙ (необязательно)", savedEnvironmentName ?? "", false);
+        var defaultEnvironmentName = string.Equals(template?.Name, "GitHub", StringComparison.OrdinalIgnoreCase)
+            ? "GITHUB_PERSONAL_ACCESS_TOKEN" : "";
+        var envName = Field("ИМЯ СЕКРЕТНОЙ ПЕРЕМЕННОЙ (необязательно)", savedEnvironmentName ?? defaultEnvironmentName, false);
         var secret = new PasswordBox { Padding = new Thickness(8), Height = 32 };
         panel.Children.Add(new TextBlock { Text = "СЕКРЕТ / ТОКЕН (необязательно)", Foreground = Brush("#16C8F5"), FontSize = 10, Margin = new Thickness(0, 8, 0, 4) });
         panel.Children.Add(secret);
@@ -544,7 +549,14 @@ public sealed class CatalogWorkspaceControl : UserControl
             }
             else
             {
-                AddMcpServer(new MarketplaceItem(name, "APP INTEGRATION", description, "", "", name));
+                var template = name switch
+                {
+                    "GitHub" => new MarketplaceItem(name, "APP INTEGRATION", description, "docker", "run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server", name),
+                    "Unity" => new MarketplaceItem(name, "APP INTEGRATION", description, "npx", "-y @akiojin/unity-editor-mcp@latest", name),
+                    "Blender" => new MarketplaceItem(name, "APP INTEGRATION", description, "uvx", "mcp-for-blender", name),
+                    _ => new MarketplaceItem(name, "APP INTEGRATION", description, "", "", name)
+                };
+                AddMcpServer(template);
             }
         };
         buttons.Children.Add(configure);
