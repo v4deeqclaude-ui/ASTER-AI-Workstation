@@ -44,29 +44,33 @@ jobs:
         run: dotnet restore windows-wpf/ASTER.Workstation.sln
       - name: Run ASTER Connect security tests
         run: dotnet test services/ASTER.Connect.Tests/ASTER.Connect.Tests.csproj --configuration Release
-      - name: Publish ASTER Connect service
-        run: dotnet publish services/ASTER.Connect/ASTER.Connect.csproj --configuration Release --output services/ASTER.Connect/artifacts/publish
+      - name: Publish ASTER Connect self-contained for Windows x64
+        run: dotnet publish services/ASTER.Connect/ASTER.Connect.csproj --configuration Release --runtime win-x64 --self-contained true --output services/ASTER.Connect/artifacts/publish-win-x64
       - name: Publish Windows x64 application
         run: dotnet publish windows-wpf/src/ASTER.Workstation.App/ASTER.Workstation.App.csproj --configuration Release --runtime win-x64 --self-contained true --output windows-wpf/artifacts/publish
-      - name: Verify Ollama client is included
+      - name: Bundle ASTER Connect inside ASTER
         shell: pwsh
         run: |
-          $publish = "windows-wpf/artifacts/publish"
-          if (-not (Test-Path "$publish/ASTER.Workstation.exe")) {
-            throw "ASTER executable was not produced."
-          }
-          Write-Host "ASTER Ollama-only application published."
-      - name: Upload Windows application
+          $service = "services/ASTER.Connect/artifacts/publish-win-x64"
+          $app = "windows-wpf/artifacts/publish"
+          if (-not (Test-Path "$service/ASTER.Connect.exe")) { throw "ASTER Connect executable was not produced." }
+          if (-not (Test-Path "$service/coreclr.dll")) { throw "Self-contained .NET runtime is missing from ASTER Connect." }
+          if (-not (Test-Path "$app/ASTER.Workstation.exe")) { throw "ASTER executable was not produced." }
+          New-Item -ItemType Directory -Force -Path "$app/ASTER.Connect" | Out-Null
+          Copy-Item -Path "$service/*" -Destination "$app/ASTER.Connect" -Recurse -Force
+          if (-not (Test-Path "$app/ASTER.Connect/ASTER.Connect.exe")) { throw "ASTER Connect was not bundled into the desktop app." }
+          Write-Host "ASTER and its self-contained ASTER Connect service are bundled together."
+      - name: Upload Windows application with bundled connector
         uses: actions/upload-artifact@v4
         with:
           name: ASTER-AI-Workstation-0.7-github-app-connect-win-x64
           path: windows-wpf/artifacts/publish/
           if-no-files-found: error
           retention-days: 14
-      - name: Upload ASTER Connect service
+      - name: Upload standalone ASTER Connect Windows x64
         uses: actions/upload-artifact@v4
         with:
-          name: ASTER-Connect-0.7-service
-          path: services/ASTER.Connect/artifacts/publish/
+          name: ASTER-Connect-0.7-win-x64-self-contained
+          path: services/ASTER.Connect/artifacts/publish-win-x64/
           if-no-files-found: error
           retention-days: 14
