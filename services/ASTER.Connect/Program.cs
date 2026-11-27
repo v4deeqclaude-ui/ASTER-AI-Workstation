@@ -148,7 +148,9 @@ app.MapGet("/api/github/callback", async (HttpContext http, string? installation
             statusCode: StatusCodes.Status400BadRequest);
     }
 
-    var stateParts = expectedState.Split(new[] { ':' }, 2);\n    var expectedPairingId = stateParts.Length == 2 ? stateParts[0] : string.Empty;\n    var expectedBytes = System.Text.Encoding.ASCII.GetBytes(stateParts.Length == 2 ? stateParts[1] : string.Empty);
+    var stateParts = expectedState.Split(new[] { ':' }, 2);
+    var expectedPairingId = stateParts.Length == 2 ? stateParts[0] : string.Empty;
+    var expectedBytes = System.Text.Encoding.ASCII.GetBytes(stateParts.Length == 2 ? stateParts[1] : string.Empty);
     var actualBytes = System.Text.Encoding.ASCII.GetBytes(state);
     var validState = expectedBytes.Length == actualBytes.Length &&
                      CryptographicOperations.FixedTimeEquals(expectedBytes, actualBytes);
