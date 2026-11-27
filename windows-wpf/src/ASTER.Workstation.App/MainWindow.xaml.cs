@@ -248,6 +248,13 @@ public partial class MainWindow : Window
         WorkspaceActivityLog.Write("NAVIGATION", "Открыт каталог PLUGIN.");
     }
 
+    public void OpenIntegrationCatalog(string integrationName)
+    {
+        Plugin_Click(this, new RoutedEventArgs());
+        SetStatus($"Выбрано приложение: {integrationName}. Открыт каталог интеграций ASTER.");
+        WorkspaceActivityLog.Write("INTEGRATIONS", $"Пользователь выбрал приложение из кнопки добавления чата: {integrationName}.");
+    }
+
     private void Skill_Click(object sender, RoutedEventArgs e)
     {
         SetActiveNavigation(NavSkill);
