@@ -3,20 +3,20 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-        <Color x:Key="WindowColor">#101216</Color>
-        <Color x:Key="PanelColor">#191D24</Color>
-        <Color x:Key="PanelAltColor">#202630</Color>
-        <Color x:Key="AccentColor">#C49A62</Color>
+        <Color x:Key="WindowColor">#090F18</Color>
+        <Color x:Key="PanelColor">#111D2A</Color>
+        <Color x:Key="PanelAltColor">#172A3A</Color>
+        <Color x:Key="AccentColor">#16C8F5</Color>
         <SolidColorBrush x:Key="WindowBrush" Color="{StaticResource WindowColor}" />
         <SolidColorBrush x:Key="PanelBrush" Color="{StaticResource PanelColor}" />
         <SolidColorBrush x:Key="PanelAltBrush" Color="{StaticResource PanelAltColor}" />
         <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
-        <SolidColorBrush x:Key="TextBrush" Color="#F1F0ED" />
-        <SolidColorBrush x:Key="MutedBrush" Color="#9BA3AE" />
+        <SolidColorBrush x:Key="TextBrush" Color="#EAF7FC" />
+        <SolidColorBrush x:Key="MutedBrush" Color="#91A7B5" />
         <Style TargetType="Button">
             <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-            <Setter Property="Background" Value="#29313D" />
-            <Setter Property="BorderBrush" Value="#394453" />
+            <Setter Property="Background" Value="#142A3A" />
+            <Setter Property="BorderBrush" Value="#24516A" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="Padding" Value="14,9" />
             <Setter Property="Cursor" Value="Hand" />
@@ -28,7 +28,7 @@
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#354151" /></Trigger>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter Property="Background" Value="#1D4055" /></Trigger>
                             <Trigger Property="IsEnabled" Value="False"><Setter Property="Opacity" Value="0.45" /></Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -53,8 +53,8 @@
                             <ContentPresenter />
                         </Border>
                         <ControlTemplate.Triggers>
-                            <Trigger Property="IsSelected" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#303A47" /></Trigger>
-                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#252D38" /></Trigger>
+                            <Trigger Property="IsSelected" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#17364A" /></Trigger>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ItemBorder" Property="Background" Value="#132A3A" /></Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>

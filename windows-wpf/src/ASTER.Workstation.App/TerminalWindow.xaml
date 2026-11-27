@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="ASTER — Командная строка" Height="650" Width="1050"
         MinHeight="440" MinWidth="700" WindowStartupLocation="CenterOwner"
-        Background="#10141A" Foreground="#E7EDF5">
+        Background="#090F18" Foreground="#EAF7FC">
     <Grid Margin="18">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -14,12 +14,12 @@
         <DockPanel Grid.Row="0" Margin="0,0,0,12">
             <StackPanel>
                 <TextBlock Text="КОМАНДНАЯ СТРОКА" FontSize="18" FontWeight="SemiBold"/>
-                <TextBlock Text="Команды ASTER и инструменты Windows · текущая сессия" Foreground="#94A1B2" FontSize="11" Margin="0,4,0,0"/>
+                <TextBlock Text="Команды ASTER и инструменты Windows · текущая сессия" Foreground="#91A7B5" FontSize="11" Margin="0,4,0,0"/>
             </StackPanel>
             <Button DockPanel.Dock="Right" Content="Очистить экран" Padding="12,7" Click="Clear_Click"/>
         </DockPanel>
-        <Border Grid.Row="1" Background="#080B10" BorderBrush="#293442" BorderThickness="1" CornerRadius="8" Padding="12">
-            <TextBox x:Name="OutputBox" Background="Transparent" Foreground="#C7E7D1"
+        <Border Grid.Row="1" Background="#090F18" BorderBrush="#24516A" BorderThickness="1" CornerRadius="14" Padding="12">
+            <TextBox x:Name="OutputBox" Background="Transparent" Foreground="#A8F1FF"
                      BorderThickness="0" FontFamily="Cascadia Mono" FontSize="12"
                      IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
                      HorizontalScrollBarVisibility="Auto"/>
@@ -27,16 +27,16 @@
         <Grid Grid.Row="2" Margin="0,12,0,0">
             <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
             <TextBox x:Name="CommandBox" Grid.Column="0" Height="38" Padding="10,8"
-                     Background="#1B232D" Foreground="#FFFFFF" BorderBrush="#3B4A5C"
+                     Background="#102235" Foreground="#EAF7FC" BorderBrush="#24516A"
                      FontFamily="Cascadia Mono" FontSize="12" VerticalContentAlignment="Center"
                      KeyDown="CommandBox_KeyDown"/>
             <Button x:Name="RunButton" Grid.Column="1" Content="Выполнить" Margin="9,0,0,0"
-                    Padding="18,7" Background="#61D6D0" Foreground="#101418"
+                    Padding="18,7" Background="#16C8F5" Foreground="#06131C"
                     FontWeight="SemiBold" Click="Run_Click"/>
         </Grid>
         <DockPanel Grid.Row="3" Margin="0,10,0,0">
             <TextBlock x:Name="StatusText" Text="Готово · команды выполняются от имени текущего пользователя Windows"
-                       Foreground="#91A0B2" FontSize="10" VerticalAlignment="Center"/>
+                       Foreground="#91A7B5" FontSize="10" VerticalAlignment="Center"/>
             <Button x:Name="StopButton" DockPanel.Dock="Right" Content="Остановить" Padding="12,5"
                     IsEnabled="False" Click="Stop_Click"/>
         </DockPanel>
