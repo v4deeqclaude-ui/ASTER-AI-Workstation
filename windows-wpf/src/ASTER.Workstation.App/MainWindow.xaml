@@ -17,13 +17,13 @@
                     <TextBlock Text="AI WORKSTATION" FontSize="10" Foreground="{StaticResource MutedBrush}" Margin="1,0,0,27" />
                     <TextBlock Text="РАБОЧЕЕ ПРОСТРАНСТВО" FontSize="9" Foreground="{StaticResource MutedBrush}" Margin="7,0,0,9" />
                     <Button x:Name="NavHome" Content="⌂   Главная" HorizontalContentAlignment="Left" Background="#29313D" BorderThickness="0" Margin="0,0,0,5" Click="Home_Click" />
+                    <Button x:Name="NavMyApplications" Content="▣   Мои приложения" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="MyApplications_Click" />
                     <Button x:Name="NavProjects" Content="▤   Проекты" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Projects_Click" />
                     <Button x:Name="NavPlugin" Content="⛓   PLUGIN" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Plugin_Click" />
                     <Button x:Name="NavSkill" Content="✧   SKILL" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Skill_Click" />
                     <Border Height="1" Background="#24465D" Margin="4,9,4,9" />
                     <Button x:Name="NavPhoto" Content="◎   ФОТО" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Photo_Click" />
                     <Button x:Name="NavVideo" Content="▷   ВИДЕО" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Video_Click" />
-                    <Button x:Name="NavApplications" Content="▣   ПРИЛОЖЕНИЯ" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Applications_Click" />
                     <Button x:Name="NavMusic" Content="♫   МУЗЫКА" HorizontalContentAlignment="Left" Background="Transparent" BorderThickness="0" Margin="0,0,0,5" Click="Music_Click" />
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Bottom">
