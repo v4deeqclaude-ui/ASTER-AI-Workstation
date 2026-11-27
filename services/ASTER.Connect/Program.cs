@@ -1,8 +1,23 @@
 using System.Security.Cryptography;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.DataProtection;
 using ASTER.Connect.Storage;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("pairing-start", http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true }));
+    options.AddPolicy("pairing-poll", http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 30, Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true }));
+    options.AddPolicy("pairing-complete", http => RateLimitPartition.GetFixedWindowLimiter(
+        http.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true }));
+});
 var keyRingPath = builder.Configuration["DataProtection:KeyRingPath"];
 var dataProtection = builder.Services.AddDataProtection();
 if (!string.IsNullOrWhiteSpace(keyRingPath))
@@ -21,6 +36,7 @@ if (!string.IsNullOrWhiteSpace(pairingStorePath))
 }
 
 var app = builder.Build();
+app.UseRateLimiter();
 var stateProtector = app.Services.GetRequiredService<IDataProtectionProvider>()
     .CreateProtector("ASTER.Connect.GitHub.InstallationState.v1")
     .ToTimeLimitedDataProtector();
@@ -107,7 +123,7 @@ app.MapPost("/api/github/pairings", async (HttpContext http, IConfiguration conf
     });
     var url = "https://github.com/apps/" + Uri.EscapeDataString(slug) + "/installations/new?state=" + Uri.EscapeDataString(state);
     return Results.Created("/api/github/pairings/" + id, new { pairingId = id, authorizationUrl = url, expiresAtUtc = now.AddMinutes(10), status = "pending" });
-});
+}).RequireRateLimiting("pairing-start");
 
 app.MapPost("/api/github/pairings/{id}/status", async (string id, IPairingStore store, PairingStatusRequest request, CancellationToken ct) =>
 {
@@ -117,8 +133,10 @@ app.MapPost("/api/github/pairings/{id}/status", async (string id, IPairingStore 
     if (record is null || record.ExpiresAtUtc <= DateTimeOffset.UtcNow)
         return Results.NotFound(new { status = "expired_or_unknown" });
     var supplied = SHA256.HashData(Convert.FromHexString(request.Verifier));
-    var stored = Convert.FromHexString(record.VerifierHash);
-    if (!CryptographicOperations.FixedTimeEquals(supplied, stored))
+    byte[] stored;
+    try { stored = Convert.FromHexString(record.VerifierHash); }
+    catch (FormatException) { return Results.Problem(title: "Pairing proof rejected", statusCode: 401); }
+    if (stored.Length != supplied.Length || !CryptographicOperations.FixedTimeEquals(supplied, stored))
         return Results.Problem(title: "Pairing proof rejected", statusCode: 401);
     if (string.Equals(record.Status, "installed", StringComparison.Ordinal))
     {
@@ -128,7 +146,7 @@ app.MapPost("/api/github/pairings/{id}/status", async (string id, IPairingStore 
         return Results.Ok(new { pairingId = record.Id, status = "completion_ready", completionCode, expiresAtUtc = record.ExpiresAtUtc });
     }
     return Results.Ok(new { pairingId = record.Id, status = record.Status, expiresAtUtc = record.ExpiresAtUtc });
-});
+}).RequireRateLimiting("pairing-poll");
 
 app.MapPost("/api/github/pairings/{id}/complete", async (string id, IPairingStore store, PairingCompleteRequest request, CancellationToken ct) =>
 {
@@ -136,7 +154,7 @@ app.MapPost("/api/github/pairings/{id}/complete", async (string id, IPairingStor
     if (installationId is null)
         return Results.Problem(title: "Pairing completion code is invalid, expired, or already used", statusCode: 410);
     return Results.Ok(new { pairingId = id, status = "redeemed", installationId });
-});
+}).RequireRateLimiting("pairing-complete");
 
 app.MapGet("/api/github/callback", async (HttpContext http, string? installation_id, string? setup_action, string? state) =>
 {
