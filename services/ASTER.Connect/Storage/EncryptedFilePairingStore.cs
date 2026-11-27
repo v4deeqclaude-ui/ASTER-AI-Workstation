@@ -11,13 +11,18 @@ public sealed record PairingRecord(
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset ExpiresAtUtc,
     string Status,
-    long? InstallationId);
+    long? InstallationId,
+    string? CompletionCodeHash = null,
+    string? CompletionCodeProtected = null,
+    DateTimeOffset? CompletionExpiresAtUtc = null);
 
 public interface IPairingStore
 {
     Task<PairingRecord?> GetAsync(string id, CancellationToken cancellationToken = default);
     Task SaveAsync(PairingRecord record, CancellationToken cancellationToken = default);
     Task<bool> TryMarkInstalledAsync(string id, long installationId, DateTimeOffset nowUtc, CancellationToken cancellationToken = default);
+    Task<string?> TryIssueCompletionCodeAsync(string id, DateTimeOffset nowUtc, CancellationToken cancellationToken = default);
+    Task<long?> TryRedeemCompletionCodeAsync(string id, string completionCode, DateTimeOffset nowUtc, CancellationToken cancellationToken = default);
     Task<bool> RemoveAsync(string id, CancellationToken cancellationToken = default);
 }
 
@@ -91,6 +96,75 @@ public sealed class EncryptedFilePairingStore : IPairingStore
             records[id] = record with { Status = "installed", InstallationId = installationId };
             await WriteAllAsync(records, cancellationToken);
             return true;
+        }
+        finally { _gate.Release(); }
+    }
+
+    public async Task<string?> TryIssueCompletionCodeAsync(string id, DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
+    {
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var records = await ReadAllAsync(cancellationToken);
+            if (!records.TryGetValue(id, out var record) || record.ExpiresAtUtc <= nowUtc)
+                return null;
+
+            if (string.Equals(record.Status, "completion_ready", StringComparison.Ordinal) &&
+                record.CompletionExpiresAtUtc > nowUtc &&
+                !string.IsNullOrWhiteSpace(record.CompletionCodeProtected))
+                return _protector.Unprotect(record.CompletionCodeProtected);
+
+            if (!string.Equals(record.Status, "installed", StringComparison.Ordinal) || record.InstallationId is null)
+                return null;
+
+            var code = Convert.ToHexString(RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
+            var expires = new[] { nowUtc.AddMinutes(5), record.ExpiresAtUtc }.Min();
+            records[id] = record with
+            {
+                Status = "completion_ready",
+                CompletionCodeHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(code))),
+                CompletionCodeProtected = _protector.Protect(code),
+                CompletionExpiresAtUtc = expires
+            };
+            await WriteAllAsync(records, cancellationToken);
+            return code;
+        }
+        finally { _gate.Release(); }
+    }
+
+    public async Task<long?> TryRedeemCompletionCodeAsync(string id, string completionCode, DateTimeOffset nowUtc, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(completionCode) ||
+            completionCode.Length != 64 || !completionCode.All(Uri.IsHexDigit))
+            return null;
+
+        await _gate.WaitAsync(cancellationToken);
+        try
+        {
+            var records = await ReadAllAsync(cancellationToken);
+            if (!records.TryGetValue(id, out var record) ||
+                !string.Equals(record.Status, "completion_ready", StringComparison.Ordinal) ||
+                record.CompletionExpiresAtUtc is null || record.CompletionExpiresAtUtc <= nowUtc ||
+                record.InstallationId is null || string.IsNullOrWhiteSpace(record.CompletionCodeHash))
+                return null;
+
+            var supplied = SHA256.HashData(Encoding.UTF8.GetBytes(completionCode));
+            byte[] stored;
+            try { stored = Convert.FromHexString(record.CompletionCodeHash); }
+            catch (FormatException) { return null; }
+            if (stored.Length != supplied.Length || !CryptographicOperations.FixedTimeEquals(supplied, stored))
+                return null;
+
+            var installationId = record.InstallationId.Value;
+            records[id] = record with
+            {
+                Status = "completed",
+                CompletionCodeHash = null,
+                CompletionCodeProtected = null,
+                CompletionExpiresAtUtc = null
+            };
+            await WriteAllAsync(records, cancellationToken);
+            return installationId;
         }
         finally { _gate.Release(); }
     }
