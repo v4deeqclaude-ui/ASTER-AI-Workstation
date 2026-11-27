@@ -1,8 +1,8 @@
 <UserControl x:Class="ASTER.Workstation.App.ChatWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Background="#090F18" Foreground="#EAF7FC">
-    <Grid Margin="22">
+        Background="#071321" Foreground="#EAF7FC">
+    <Grid Margin="22,18,22,16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -11,60 +11,102 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Margin="0,0,0,14">
+        <Grid Grid.Row="0" Margin="0,0,0,12">
             <StackPanel HorizontalAlignment="Left">
-                <TextBlock x:Name="SectionEyebrow" Text="ASTER AI WORKSTATION" FontSize="10"
-                           Foreground="#16C8F5" FontWeight="SemiBold"/>
-                <TextBlock x:Name="SectionTitleText" Text="ИИ-чат" FontSize="24"
-                           FontWeight="SemiBold" Margin="0,4,0,0"/>
+                <TextBlock x:Name="SectionEyebrow" Text="✦ ASTER AI WORKSTATION" FontSize="10"
+                           Foreground="#55D8FF" FontWeight="SemiBold" />
+                <TextBlock x:Name="SectionTitleText" Text="Главная" FontSize="22"
+                           FontWeight="SemiBold" Margin="0,3,0,0"/>
                 <TextBlock x:Name="SectionSubtitleText"
                            Text="Локальный ИИ Ollama · переписка хранится на этом компьютере"
-                           FontSize="11" Foreground="#91A7B5" Margin="0,4,0,0"/>
+                           FontSize="10" Foreground="#91AFC4" Margin="0,3,0,0"/>
             </StackPanel>
-            <Button x:Name="CloseWorkspaceButton" Content="×" Width="36" Height="36"
+            <Button x:Name="CloseWorkspaceButton" Content="×" Width="32" Height="32"
                     HorizontalAlignment="Right" VerticalAlignment="Top" Padding="0"
-                    FontSize="22" FontWeight="Light" Background="#12283A"
-                    Foreground="#A8F1FF" BorderBrush="#24516A"
+                    FontSize="21" FontWeight="Light" Background="#10273A"
+                    Foreground="#A8F1FF" BorderBrush="#28617D"
                     HorizontalContentAlignment="Center" VerticalContentAlignment="Center"
                     Click="CloseWorkspace_Click" ToolTip="Закрыть раздел"/>
         </Grid>
 
-        <Grid Grid.Row="1">
-            <Canvas Width="360" Height="420" HorizontalAlignment="Center"
-                    VerticalAlignment="Center" IsHitTestVisible="False" Opacity="0.095">
-                <Ellipse Canvas.Left="42" Canvas.Top="26" Width="276" Height="276" Stroke="#16C8F5" StrokeThickness="2" StrokeDashArray="2 8"/>
-                <Ellipse Canvas.Left="62" Canvas.Top="46" Width="236" Height="236" Stroke="#A8F1FF" StrokeThickness="1"/>
-                <Path Data="M 180,0 L 180,28 M 174,8 L 186,8" Stroke="#16C8F5" StrokeThickness="3" Fill="Transparent"/>
-                <Ellipse Canvas.Left="169" Canvas.Top="0" Width="22" Height="22" Stroke="#A8F1FF" StrokeThickness="3" Fill="#102A39"/>
-                <Polygon Points="111,65 139,43 221,43 249,65 263,112 248,153 220,177 140,177 112,153 97,112"
-                         Fill="#102A39" Stroke="#16C8F5" StrokeThickness="5"/>
-                <Polygon Points="126,83 145,69 215,69 234,83 243,111 231,139 211,154 149,154 129,139 117,111"
-                         Fill="#0B1C29" Stroke="#A8F1FF" StrokeThickness="2"/>
-                <Path Data="M 134,111 L 158,111 L 166,120 L 158,129 L 134,129 Z" Fill="#16C8F5" Stroke="#A8F1FF" StrokeThickness="1"/>
-                <Path Data="M 226,111 L 202,111 L 194,120 L 202,129 L 226,129 Z" Fill="#16C8F5" Stroke="#A8F1FF" StrokeThickness="1"/>
-                <Path Data="M 160,143 L 180,150 L 200,143" Stroke="#A8F1FF" StrokeThickness="3" Fill="Transparent"/>
-                <Path Data="M 99,91 L 79,106 L 88,137 L 107,145 M 261,91 L 281,106 L 272,137 L 253,145"
-                      Stroke="#16C8F5" StrokeThickness="6" Fill="Transparent"/>
-                <Path Data="M 180,177 L 180,193" Stroke="#16C8F5" StrokeThickness="5" Fill="Transparent"/>
-                <Polygon Points="119,194 145,181 215,181 241,194 258,279 236,307 124,307 102,279"
-                         Fill="#102A39" Stroke="#16C8F5" StrokeThickness="5"/>
-                <Path Data="M 139,215 L 221,215 M 130,235 L 230,235 M 140,255 L 220,255"
-                      Stroke="#A8F1FF" StrokeThickness="3" Fill="Transparent"/>
-                <Polygon Points="180,220 197,239 180,258 163,239" Fill="#16C8F5" Stroke="#A8F1FF" StrokeThickness="2"/>
-                <Ellipse Canvas.Left="171" Canvas.Top="230" Width="18" Height="18" Stroke="#E5FBFF" StrokeThickness="2"/>
-                <Path Data="M 111,204 L 79,220 L 64,275 L 83,285 L 109,250 M 249,204 L 281,220 L 296,275 L 277,285 L 251,250"
-                      Stroke="#16C8F5" StrokeThickness="13" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
-                <Path Data="M 141,307 L 130,365 L 111,384 M 219,307 L 230,365 L 249,384"
-                      Stroke="#16C8F5" StrokeThickness="18" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Fill="Transparent"/>
-                <Path Data="M 95,390 L 128,390 M 232,390 L 265,390" Stroke="#A8F1FF" StrokeThickness="5" Fill="Transparent"/>
-                <Path Data="M 49,174 L 68,174 M 292,174 L 311,174 M 180,318 L 180,344"
-                      Stroke="#A8F1FF" StrokeThickness="2" Fill="Transparent"/>
+        <Grid Grid.Row="1" ClipToBounds="True">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.15*"/>
+                <ColumnDefinition Width="0.85*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.ColumnSpan="2" Background="#061522" BorderBrush="#17415D"
+                    BorderThickness="1" CornerRadius="14" Opacity="0.52"/>
+            <Canvas Grid.Column="1" Width="460" Height="560" HorizontalAlignment="Right"
+                    VerticalAlignment="Center" IsHitTestVisible="False" Opacity="0.98">
+                <Ellipse Canvas.Left="42" Canvas.Top="34" Width="390" Height="390"
+                         Stroke="#126A9B" StrokeThickness="1.5" StrokeDashArray="2 7" Opacity="0.8"/>
+                <Ellipse Canvas.Left="70" Canvas.Top="62" Width="335" Height="335"
+                         Stroke="#1B9ED0" StrokeThickness="1" Opacity="0.7"/>
+                <Ellipse Canvas.Left="104" Canvas.Top="96" Width="270" Height="270"
+                         Stroke="#67DFFF" StrokeThickness="0.8" Opacity="0.4"/>
+                <Path Data="M 0,155 C 48,98 88,74 140,60" Stroke="#1A82B7" StrokeThickness="2" Fill="Transparent"/>
+                <Path Data="M 360,60 C 410,88 445,120 460,174" Stroke="#1A82B7" StrokeThickness="2" Fill="Transparent"/>
+
+                <!-- Андроид-девушка: светлые волосы, лицо, кибернетические детали и броня -->
+                <Path Data="M 190,88 C 128,68 96,126 105,207 C 110,253 91,286 77,321 C 105,306 123,289 136,258 L 144,190 Z"
+                      Fill="#102E47" Stroke="#2D9CCB" StrokeThickness="3"/>
+                <Path Data="M 269,87 C 331,78 356,128 343,204 C 336,251 363,286 381,319 C 346,305 322,282 309,248 L 302,181 Z"
+                      Fill="#102E47" Stroke="#2D9CCB" StrokeThickness="3"/>
+                <Path Data="M 166,91 C 187,61 244,54 282,82 C 310,104 316,153 303,203 C 292,249 271,279 230,286 C 185,278 157,245 146,202 C 133,151 140,113 166,91 Z"
+                      Fill="#D4E8F4" Stroke="#67DFFF" StrokeThickness="3"/>
+                <Path Data="M 146,149 C 132,95 167,52 223,47 C 280,43 319,84 310,146 C 294,119 277,104 257,91 C 229,111 195,119 146,149 Z"
+                      Fill="#B5D8E9" Stroke="#3B9CC7" StrokeThickness="4"/>
+                <Path Data="M 148,139 C 130,186 144,239 170,269 C 142,260 119,229 116,187 C 109,130 128,80 169,59"
+                      Stroke="#E7F6FF" StrokeThickness="8" Fill="Transparent" Opacity="0.85"/>
+                <Path Data="M 289,124 C 313,175 300,234 273,269" Stroke="#E7F6FF" StrokeThickness="7" Fill="Transparent" Opacity="0.8"/>
+                <Path Data="M 177,174 Q 198,160 215,174" Stroke="#153E5B" StrokeThickness="5" Fill="Transparent"/>
+                <Path Data="M 240,174 Q 259,160 278,174" Stroke="#153E5B" StrokeThickness="5" Fill="Transparent"/>
+                <Ellipse Canvas.Left="187" Canvas.Top="174" Width="18" Height="10" Fill="#19BFF2"/>
+                <Ellipse Canvas.Left="249" Canvas.Top="174" Width="18" Height="10" Fill="#19BFF2"/>
+                <Ellipse Canvas.Left="192" Canvas.Top="177" Width="5" Height="5" Fill="#E9FCFF"/>
+                <Ellipse Canvas.Left="254" Canvas.Top="177" Width="5" Height="5" Fill="#E9FCFF"/>
+                <Path Data="M 227,181 L 216,212 L 230,218" Stroke="#7BB8D1" StrokeThickness="2" Fill="Transparent"/>
+                <Path Data="M 202,238 Q 227,251 252,237" Stroke="#2D7598" StrokeThickness="3" Fill="Transparent"/>
+                <Path Data="M 151,161 L 132,185 L 145,221 L 164,232" Stroke="#26BFF0" StrokeThickness="4" Fill="Transparent"/>
+                <Ellipse Canvas.Left="292" Canvas.Top="142" Width="70" Height="70" Fill="#0A2032" Stroke="#18BDF1" StrokeThickness="7"/>
+                <Ellipse Canvas.Left="306" Canvas.Top="156" Width="42" Height="42" Fill="#123D5A" Stroke="#9DEEFF" StrokeThickness="2"/>
+                <Ellipse Canvas.Left="319" Canvas.Top="169" Width="16" Height="16" Fill="#20C9F8"/>
+                <Path Data="M 176,276 L 169,310 L 122,348 L 102,465 L 348,465 L 329,348 L 278,310 L 270,276"
+                      Fill="#0B263B" Stroke="#2D9CCB" StrokeThickness="4"/>
+                <Path Data="M 169,310 L 223,344 L 278,310 M 143,368 L 223,392 L 307,368"
+                      Stroke="#63DDFB" StrokeThickness="3" Fill="Transparent"/>
+                <Path Data="M 223,342 L 246,369 L 223,398 L 200,369 Z"
+                      Fill="#0D6F9D" Stroke="#9DEEFF" StrokeThickness="3"/>
+                <Path Data="M 115,389 L 86,441 M 331,389 L 360,441"
+                      Stroke="#27BDEB" StrokeThickness="10" StrokeStartLineCap="Round" Fill="Transparent"/>
+                <Path Data="M 135,436 L 310,436" Stroke="#9DEEFF" StrokeThickness="2" Fill="Transparent"/>
+                <Path Data="M 100,78 L 76,58 L 59,78 M 361,250 L 389,271 L 414,250"
+                      Stroke="#36BFEF" StrokeThickness="3" Fill="Transparent"/>
             </Canvas>
 
-            <ListBox x:Name="MessagesList" Background="Transparent" BorderThickness="0"
+            <StackPanel Grid.Column="0" Margin="28,38,0,0" VerticalAlignment="Top"
+                        MaxWidth="480">
+                <TextBlock Text="ДОБРО ПОЖАЛОВАТЬ В ASTER!" FontSize="11"
+                           Foreground="#53D8FF" FontWeight="Bold"/>
+                <TextBlock Text="Добро пожаловать в ASTER!"
+                           FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap"
+                           Margin="0,12,0,8" Foreground="#F0FAFF"/>
+                <TextBlock Text="Ваш личный AI-помощник&#10;для работы, творчества и игр"
+                           FontSize="16" Foreground="#B5D7E8" LineHeight="23"/>
+                <Border Background="#102E46" BorderBrush="#1D719C" BorderThickness="1"
+                        CornerRadius="12" Padding="12,9" Margin="0,24,0,0"
+                        HorizontalAlignment="Left">
+                    <TextBlock Text="✦  Спрашивайте, создавайте, исследуйте…" FontSize="12"
+                               Foreground="#C9F3FF"/>
+                </Border>
+            </StackPanel>
+
+            <ListBox x:Name="MessagesList" Grid.Column="0" Grid.ColumnSpan="2"
+                     Background="Transparent" BorderThickness="0"
                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                     SelectionMode="Single">
+                     SelectionMode="Single" Margin="20,12,18,12">
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="ListBoxItem">
                         <Setter Property="Background" Value="Transparent"/>
@@ -73,24 +115,23 @@
                         <Setter Property="Margin" Value="0"/>
                         <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                         <Setter Property="Template">
-                            <Setter.Value>
-                                <ControlTemplate TargetType="ListBoxItem">
-                                    <ContentPresenter/>
-                                </ControlTemplate>
-                            </Setter.Value>
+                            <Setter.Value><ControlTemplate TargetType="ListBoxItem"><ContentPresenter/></ControlTemplate></Setter.Value>
                         </Setter>
                     </Style>
                 </ListBox.ItemContainerStyle>
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <StackPanel Margin="0,11,0,11" MaxWidth="900"
-                                    HorizontalAlignment="Left">
-                            <TextBlock Text="{Binding Author}" FontSize="10"
-                                       Foreground="#16C8F5" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding Content}" TextWrapping="Wrap"
-                                       FontSize="14" LineHeight="21" Margin="0,5,0,0"
-                                       Foreground="#EAF2F7"/>
-                        </StackPanel>
+                        <Border Background="#10283A" BorderBrush="#1C5877" BorderThickness="1"
+                                CornerRadius="11" Padding="12" Margin="0,8,0,8"
+                                HorizontalAlignment="Left" MaxWidth="820">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Author}" FontSize="10"
+                                           Foreground="#55D8FF" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding Content}" TextWrapping="Wrap"
+                                           FontSize="14" LineHeight="21" Margin="0,5,0,0"
+                                           Foreground="#EAF7FC"/>
+                            </StackPanel>
+                        </Border>
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
@@ -98,32 +139,45 @@
 
         <TextBlock x:Name="StatusText" Grid.Row="2"
                    Text="Готов к работе с локальной моделью."
-                   FontSize="10" Foreground="#91A7B5" Margin="2,10,2,8"/>
+                   FontSize="10" Foreground="#91AFC4" Margin="4,9,4,7"/>
+        <TextBlock x:Name="AttachmentsText" Grid.Row="3" Text="" FontSize="10"
+                   Foreground="#91AFC4" TextTrimming="CharacterEllipsis" Margin="4,0,4,6"/>
 
-        <TextBlock x:Name="AttachmentsText" Grid.Row="3" Text="" FontSize="10" Foreground="#91A7B5" TextTrimming="CharacterEllipsis" Margin="2,0,2,7"/>
-        <Grid Grid.Row="4">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <Button x:Name="AttachButton" Grid.Column="0" Content="＋" FontSize="20" Width="44" Margin="0,0,8,0"
-                    Background="#173044" Foreground="#A8F1FF" BorderBrush="#24516A" Click="Attach_Click" PreviewMouseRightButtonDown="AttachButton_Clear" ToolTip="Добавить файлы и папки; правый клик — очистить вложения"/>
-            <Border Grid.Column="1" Background="#102235" BorderBrush="#24516A"
-                    BorderThickness="1" CornerRadius="14" Padding="5">
-                <TextBox x:Name="MessageInput" MinHeight="48" MaxHeight="140"
-                         AcceptsReturn="True" TextWrapping="Wrap"
-                         VerticalScrollBarVisibility="Auto" Padding="10,8"
-                         Background="Transparent" Foreground="#EAF7FC"
-                         BorderThickness="0" FontSize="13"
-                         VerticalContentAlignment="Center"
-                         KeyDown="MessageInput_KeyDown"/>
-            </Border>
-            <Button x:Name="SendButton" Grid.Column="2" Content="Отправить"
-                    Margin="10,0,0,0" Padding="18,10"
-                    Background="#16C8F5" Foreground="#06131C"
-                    BorderBrush="#16C8F5" FontWeight="SemiBold"
-                    Click="Send_Click"/>
-        </Grid>
+        <StackPanel Grid.Row="4">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Button x:Name="AttachButton" Grid.Column="0" Content="＋" FontSize="22"
+                        Width="42" Height="44" Margin="0,0,8,0"
+                        Background="#12344B" Foreground="#8DEAFF" BorderBrush="#23779D"
+                        Click="Attach_Click" PreviewMouseRightButtonDown="AttachButton_Clear"
+                        ToolTip="Добавить файлы и папки"/>
+                <Border Grid.Column="1" Background="#0E2639" BorderBrush="#1E7196"
+                        BorderThickness="1" CornerRadius="14" Padding="5">
+                    <TextBox x:Name="MessageInput" MinHeight="42" MaxHeight="110"
+                             AcceptsReturn="True" TextWrapping="Wrap"
+                             VerticalScrollBarVisibility="Auto" Padding="10,7"
+                             Background="Transparent" Foreground="#EAF7FC"
+                             BorderThickness="0" FontSize="13"
+                             VerticalContentAlignment="Center"
+                             KeyDown="MessageInput_KeyDown"/>
+                </Border>
+                <Button x:Name="SendButton" Grid.Column="2" Content="➤" FontSize="20"
+                        Width="44" Height="44" Margin="8,0,0,0" Padding="0"
+                        Background="#0E9FCB" Foreground="#FFFFFF"
+                        BorderBrush="#38D5FF" FontWeight="SemiBold" Click="Send_Click"
+                        ToolTip="Отправить сообщение"/>
+            </Grid>
+            <UniformGrid Columns="5" Margin="0,9,0,0">
+                <Button Content="♧&#10;Анализ" Tag="Проанализируй мою задачу и предложи план действий." Click="QuickAction_Click" Margin="2" Padding="5,6" FontSize="11" Background="#102A3E" BorderBrush="#1C668A"/>
+                <Button Content="⚒&#10;Создание" Tag="Помоги создать новый проект. Предложи структуру и этапы." Click="QuickAction_Click" Margin="2" Padding="5,6" FontSize="11" Background="#102A3E" BorderBrush="#1C668A"/>
+                <Button Content="◇&#10;Помощь" Tag="Помоги мне разобраться с задачей пошагово." Click="QuickAction_Click" Margin="2" Padding="5,6" FontSize="11" Background="#102A3E" BorderBrush="#1C668A"/>
+                <Button Content="✧&#10;Идеи" Tag="Предложи несколько интересных идей для моей задачи." Click="QuickAction_Click" Margin="2" Padding="5,6" FontSize="11" Background="#102A3E" BorderBrush="#1C668A"/>
+                <Button Content="⌘&#10;Код" Tag="Помоги написать или объяснить код. Сначала уточни задачу." Click="QuickAction_Click" Margin="2" Padding="5,6" FontSize="11" Background="#102A3E" BorderBrush="#1C668A"/>
+            </UniformGrid>
+        </StackPanel>
     </Grid>
 </UserControl>
