@@ -119,35 +119,21 @@ public sealed class CatalogWorkspaceControl : UserControl
         var heading = new StackPanel { Margin = new Thickness(0, 0, 0, 15) };
         heading.Children.Add(new TextBlock { Text = "ASTER · EXTENSIONS", Foreground = Brush("#16C8F5"), FontSize = 10, FontWeight = FontWeights.SemiBold });
         heading.Children.Add(new TextBlock { Text = "Центр плагинов", Foreground = Brush("#EAF7FC"), FontSize = 26, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 5, 0, 4) });
-        heading.Children.Add(new TextBlock { Text = "Marketplace, установленные интеграции и MCP-серверы в одном месте.", Foreground = Brush("#91A7B5"), FontSize = 12 });
+        heading.Children.Add(new TextBlock { Text = "На время проверки доступна только интеграция GitHub. Остальные приложения и каталоги временно скрыты, их настройки не удаляются.", Foreground = Brush("#91A7B5"), FontSize = 12, TextWrapping = TextWrapping.Wrap });
         Grid.SetRow(heading, 0);
         root.Children.Add(heading);
 
         var toolbar = new Grid { Margin = new Thickness(0, 0, 0, 14) };
         toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        toolbar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        AddTab(toolbar, "Приложения", "integrations", 0);
-        AddTab(toolbar, "Marketplace", "marketplace", 1);
-        AddTab(toolbar, "Мои плагины", "installed", 2);
-        AddTab(toolbar, "MCP-серверы", "mcp", 3);
-        var plus = PrimaryButton("+");
-        plus.Width = 42;
-        plus.FontSize = 20;
-        plus.ToolTip = "Добавить плагин или MCP-сервер";
-        plus.Click += async (_, _) => { _activePluginTab = "marketplace"; RefreshPluginView(); await LoadRegistryServersAsync(""); };
-        Grid.SetColumn(plus, 5);
-        toolbar.Children.Add(plus);
+        AddTab(toolbar, "GitHub", "integrations", 0);
         ConfigureCount(toolbar);
+        Grid.SetColumn(_count, 1);
         Grid.SetRow(toolbar, 1);
         root.Children.Add(toolbar);
         AddItemsArea(root);
         Content = root;
         RefreshPluginView();
-        _ = LoadRegistryServersAsync("");
     }
 
     private void AddTab(Grid toolbar, string title, string key, int column)
@@ -494,13 +480,8 @@ public sealed class CatalogWorkspaceControl : UserControl
         {
             _count.Text = "Каталог приложений";
             AddSectionTitle("APP INTEGRATIONS", "Подключение приложений");
-            _items.Children.Add(InfoCard("Реальный статус подключений", "Карточки показывают состояние интеграции. Конфигурация MCP сама по себе не означает успешное подключение. Статус изменится только после проверки сервера и получения инструментов."));
-            AddBuiltInIntegrationCard("GitHub", "Репозитории, issues, pull requests и поиск по коду.", "Официальный сервер GitHub MCP. Требования: Docker Desktop должен быть установлен и запущен. В окне настройки ASTER введи GitHub Personal Access Token; ASTER сохранит его в Windows Credential Manager и передаст контейнеру только как переменную окружения. Образ: ghcr.io/github/github-mcp-server. Документация: https://github.com/github/github-mcp-server");
-            AddBuiltInIntegrationCard("Unity", "Работа с открытым Unity Editor: сцены, объекты, компоненты и редакторские задачи.", "Совместимый вариант для Unity 2020.3+: установи Node.js 18+, затем в Unity открой Window → Package Manager → + → Add package from git URL и вставь https://github.com/akiojin/unity-editor-mcp.git?path=UnityEditorMCP/Packages/unity-editor-mcp. Оставь проект открытым. ASTER запускает MCP-пакет командой npx. Документация: https://github.com/akiojin/unity-editor-mcp");
-            AddBuiltInIntegrationCard("Blender", "Работа с открытой Blender-сценой, объектами, материалами и операциями.", "Для Blender 5.1+ можно использовать mcp-for-blender. Установи uv, выполни в PowerShell команду uvx mcp-for-blender install-addon, затем открой Blender и включи add-on Interface: MCP for Blender. Запусти MCP Server в боковой панели Blender. ASTER запускает сервер командой uvx mcp-for-blender. Документация: https://github.com/scottorogers/blender-mcp");
-            AddBuiltInIntegrationCard("Visual Studio Code", "Работа с файлами и проектами разработки.", "Для полноценного управления редактором понадобится отдельный проверенный MCP-сервер или расширение. Открытие VS Code как программы не предоставляет ИИ доступ к его инструментам.");
-            AddBuiltInIntegrationCard("Google Drive", "Поиск и работа с файлами облачного хранилища.", "Потребуется OAuth-авторизация Google и отдельный коннектор с ограниченными разрешениями. Не вводи пароль Google в конфигурацию MCP.");
-            AddBuiltInIntegrationCard("Notion", "Поиск и управление страницами и базами данных.", "Потребуется авторизация Notion и отдельный коннектор с явно выданными разрешениями.");
+            _items.Children.Add(InfoCard("Тестовая интеграция", "Сейчас оставлен только GitHub. Подключение будет проходить через официальную страницу GitHub App и сервер ASTER Connect. Personal Access Token вводить не потребуется."));
+            AddBuiltInIntegrationCard("GitHub", "Безопасное подключение GitHub App, выбранные репозитории и инструменты для ИИ.", "Для проверки потребуется развернуть ASTER Connect и зарегистрировать GitHub App. После этого кнопка подключения откроет официальную страницу GitHub. ASTER запросит только необходимые права на выбранные репозитории. Не создавай Personal Access Token и не вводи его в ASTER.");
         }
         else if (_activePluginTab == "installed")
         {
@@ -527,10 +508,7 @@ public sealed class CatalogWorkspaceControl : UserControl
     private void AddBuiltInIntegrationCard(string name, string description, string requirements)
     {
         var configuredServer = ReadMcpServers().FirstOrDefault(x => x.Enabled &&
-            (x.Name.Contains(name, StringComparison.OrdinalIgnoreCase) ||
-             (name == "GitHub" && x.Name.Contains("github", StringComparison.OrdinalIgnoreCase)) ||
-             (name == "Unity" && x.Name.Contains("unity", StringComparison.OrdinalIgnoreCase)) ||
-             (name == "Blender" && x.Name.Contains("blender", StringComparison.OrdinalIgnoreCase))));
+            x.Name.Contains(name, StringComparison.OrdinalIgnoreCase));
         var configured = configuredServer is not null;
         var body = new StackPanel();
         var header = new DockPanel();
@@ -553,27 +531,10 @@ public sealed class CatalogWorkspaceControl : UserControl
         var details = SecondaryButton("Требования");
         details.Click += (_, _) => MessageBox.Show(Window.GetWindow(this), requirements, name + " · требования к подключению", MessageBoxButton.OK, MessageBoxImage.Information);
         buttons.Children.Add(details);
-        var configure = PrimaryButton(configured ? "Открыть MCP-серверы" : "Добавить MCP-сервер");
+        var configure = PrimaryButton("Ожидает ASTER Connect");
         configure.Margin = new Thickness(8, 0, 0, 0);
-        configure.Click += (_, _) =>
-        {
-            if (configured)
-            {
-                _activePluginTab = "mcp";
-                RefreshPluginView();
-            }
-            else
-            {
-                var template = name switch
-                {
-                    "GitHub" => new MarketplaceItem(name, "APP INTEGRATION", description, "docker", "run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server", name),
-                    "Unity" => new MarketplaceItem(name, "APP INTEGRATION", description, "npx", "-y @akiojin/unity-editor-mcp@latest", name),
-                    "Blender" => new MarketplaceItem(name, "APP INTEGRATION", description, "uvx", "mcp-for-blender", name),
-                    _ => new MarketplaceItem(name, "APP INTEGRATION", description, "", "", name)
-                };
-                AddMcpServer(template);
-            }
-        };
+        configure.IsEnabled = false;
+        configure.ToolTip = "Официальный GitHub App OAuth будет включён после развертывания ASTER Connect и настройки GitHub App.";
         buttons.Children.Add(configure);
         body.Children.Add(buttons);
         _items.Children.Add(new Border
