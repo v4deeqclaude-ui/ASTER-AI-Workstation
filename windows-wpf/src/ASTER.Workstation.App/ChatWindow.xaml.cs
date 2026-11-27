@@ -193,11 +193,14 @@ public partial class ChatWindow : UserControl
             string answer;
             if (configuredServers.Any(x => x.Enabled))
             {
-                var serverNames = string.Join("\n", configuredServers.Where(x => x.Enabled).Select(x => "• " + x.Name + " — " + x.Command));
+                var serverNames = string.Join("\n", configuredServers.Where(x => x.Enabled).Select(x =>
+                    x.TransportType.Equals("streamable-http", StringComparison.OrdinalIgnoreCase)
+                        ? "• " + x.Name + " — Streamable HTTP: " + x.Endpoint
+                        : "• " + x.Name + " — STDIO: " + x.Command + " " + x.Arguments));
                 var launchApproved = MessageBox.Show(
                     Window.GetWindow(this),
-                    "Для этого запроса ASTER запустит внешние MCP-программы:\n\n" + serverNames + "\n\nЗапускать их сейчас? Запускаемые программы могут выполнять действия в пределах выданных им прав.",
-                    "Подтверждение запуска MCP-серверов",
+                    "Для этого запроса ASTER подключится к следующим MCP-серверам:\n\n" + serverNames + "\n\nПодключение может предоставить ИИ инструменты для действий от вашего имени. Продолжить?",
+                    "Подтверждение подключения MCP-серверов",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Warning) == MessageBoxResult.Yes;
                 if (!launchApproved)
