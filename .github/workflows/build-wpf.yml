@@ -7,6 +7,7 @@ on:
       - feature/aster-ai-chat-0.2
       - feature/aster-chatgpt-plan-auth
       - fix/aster-oauth-diagnostics-2026-11
+      - feature/aster-neon-future-ui
     paths:
       - 'windows-wpf/**'
       - '.github/workflows/build-wpf.yml'
