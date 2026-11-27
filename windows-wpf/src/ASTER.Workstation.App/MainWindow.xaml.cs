@@ -231,13 +231,23 @@ public partial class MainWindow : Window
     private void Applications_Click(object sender, RoutedEventArgs e)
     {
         OpenAiWorkspace("APPS", "ПРИЛОЖЕНИЯ",
-            "Ты — помощник по приложениям внутри ASTER. Помогай пользователю выбирать, настраивать и запускать программы, объясняй действия пошагово. Не утверждай, что программа установлена или запущена, если это не подтверждено доступными инструментами.");
+            "Ты — ASTER App Creator. Помогай проектировать и создавать новые приложения: сначала уточняй назначение и платформу, затем предлагай архитектуру, интерфейс, структуру проекта и пошаговый план реализации. Учитывай, что пользователь предпочитает готовые файлы и простые инструкции. Не утверждай, что файлы созданы или приложение собрано, если это не подтверждено.");
+    }
+
+    private void Plugin_Click(object sender, RoutedEventArgs e)
+    {
+        HomePage.Visibility = Visibility.Collapsed;
+        EmbeddedPage.Content = new CatalogWorkspaceControl(CatalogKind.Plugin);
+        EmbeddedPage.Visibility = Visibility.Visible;
+        WorkspaceActivityLog.Write("NAVIGATION", "Открыт каталог PLUGIN.");
     }
 
     private void Skill_Click(object sender, RoutedEventArgs e)
     {
-        OpenAiWorkspace("SKILL", "SKILL",
-            "Ты — модуль SKILL системы ASTER. Помогай проектировать навыки ИИ: название, назначение, триггеры, системный промт, входные данные, ожидаемый результат и ограничения. Пока только проектируй и описывай навыки; не утверждай, что они уже установлены или выполняются.");
+        HomePage.Visibility = Visibility.Collapsed;
+        EmbeddedPage.Content = new CatalogWorkspaceControl(CatalogKind.Skill);
+        EmbeddedPage.Visibility = Visibility.Visible;
+        WorkspaceActivityLog.Write("NAVIGATION", "Открыт каталог SKILL.");
     }
 
     private void Video_Click(object sender, RoutedEventArgs e)
