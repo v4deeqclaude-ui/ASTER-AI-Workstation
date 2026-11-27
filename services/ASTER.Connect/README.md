@@ -1,32 +1,43 @@
-# ASTER Connect (v0.7 foundation)
+# ASTER Connect (v0.7)
 
-ASP.NET Core service that will broker official GitHub App authorization for ASTER.
+ASP.NET Core service for official GitHub App installation and future repository tools.
 
-## Current stage
+## Implemented in this stage
 
-This is the deployment and health-check foundation only. GitHub authorization, callback processing, repository access, and token persistence are deliberately disabled until the secure state store and encrypted credential store are implemented. The service does not accept personal access tokens and does not store credentials.
+- `GET /health/live` — liveness endpoint.
+- `GET /health/ready` — reports whether the GitHub App slug is configured.
+- `GET /api/github/status` — reports installation-flow and repository-access status separately.
+- `GET /api/github/connect` — redirects to the official GitHub App installation page.
+- `GET /api/github/callback` — validates the one-time anti-forgery state cookie and GitHub installation callback parameters.
 
-## Endpoints
+The callback does not yet exchange an installation token, persist an installation, or expose repositories. It confirms only that GitHub returned a valid installation callback with a matching short-lived protected state. The API continues to report `not_connected` until the next stage is complete.
 
-- `GET /` — service identity
-- `GET /health/live` — process liveness (Railway health check)
-- `GET /health/ready` — configuration readiness
-- `GET /api/github/status` — honest connection/configuration status
-- `GET /api/github/connect` — reserved; returns 503 until secure OAuth flow is ready
-- `GET /api/github/callback` — reserved; returns 503 until callback validation is ready
+## Server configuration
 
-## Configuration
+Set the following environment variables in the hosting provider:
 
-Set these as server environment variables only after creating the GitHub App:
+- `GitHubApp__Slug` — slug of the ASTER-owned GitHub App.
+- `PublicBaseUrl` — public HTTPS origin of this service (for example, the Railway-provided domain).
 
-- `GitHubApp__Slug`
-- `GitHubApp__ClientId`
-- `PublicBaseUrl`
+Configure the GitHub App setup URL/callback to:
+`https://YOUR-ASTER-CONNECT-DOMAIN/api/github/callback`
 
-Never place a GitHub App private key, client secret, user token, or installation token in source control or the desktop application.
+The GitHub App should initially request only read-only repository metadata and contents permissions. Do not request write permissions for the first test.
 
-## Railway
+## Security notes
 
-Set the Railway service root directory to `services/ASTER.Connect`. Railway will build the included Dockerfile. The health-check path is `/health/live`.
+- The installation redirect uses a cryptographically random one-time state value.
+- The state is protected with ASP.NET Core Data Protection and placed in a short-lived HttpOnly cookie.
+- Callback state comparison uses a fixed-time comparison.
+- The state cookie is deleted after callback validation.
+- No Personal Access Token is requested or accepted.
+- No private key, client secret, or installation token is included in the desktop app or source control.
+- The callback deliberately does not claim that a repository connection is complete.
 
-No paid service should be provisioned until the owner reviews the provider's current plan and explicitly approves deployment.
+For production multi-instance hosting, persist and protect the ASP.NET Core Data Protection key ring using a durable private store before enabling OAuth/token exchange. Do not scale this service horizontally until that is configured.
+
+## Deployment
+
+Set Railway service root directory to `services/ASTER.Connect`. Railway builds the included Dockerfile. Health-check path: `/health/live`.
+
+No paid hosting resource should be provisioned without explicit owner approval.
