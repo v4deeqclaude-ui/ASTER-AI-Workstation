@@ -166,10 +166,9 @@ app.MapGet("/api/github/callback", async (HttpContext http, string? installation
     }
 
     var pairingStore = http.RequestServices.GetRequiredService<IPairingStore>();
-    var pairing = await pairingStore.GetAsync(expectedPairingId, http.RequestAborted);
-    if (pairing is null || pairing.ExpiresAtUtc <= DateTimeOffset.UtcNow || pairing.Status != "pending")
+    var marked = await pairingStore.TryMarkInstalledAsync(expectedPairingId, parsedInstallationId, DateTimeOffset.UtcNow, http.RequestAborted);
+    if (!marked)
         return Results.Problem(title: "Pairing request expired or already used", statusCode: 410);
-    await pairingStore.SaveAsync(pairing with { Status = "installed", InstallationId = parsedInstallationId }, http.RequestAborted);
 
     return Results.Content($$"""
         <!doctype html>
@@ -187,4 +186,5 @@ app.MapGet("/api/github/callback", async (HttpContext http, string? installation
 
 app.Run();
 
-public sealed record PairingStartRequest(string Verifier);\npublic sealed record PairingStatusRequest(string Verifier);
+public sealed record PairingStartRequest(string Verifier);
+public sealed record PairingStatusRequest(string Verifier);
